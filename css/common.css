@@ -1,0 +1,1020 @@
+@charset "utf-8";
+
+:root {
+	--main: #000066;
+}
+
+* {
+	scroll-behavior: smooth !important;
+}
+
+/* --HTML-- */
+html,
+body {
+	color: #111;
+	overflow: hidden;
+	vertical-align: baseline;
+	padding: 0px;
+	margin: 0px;
+}
+
+/* --BODY-- */
+body {
+	/* font-family: "游ゴシック Medium","Yu Gothic Medium","游ゴシック体",YuGothic,"ヒラギノ角ゴ Pro W3","Hiragino Kaku Gothic Pro","メイリオ",Meiryo,Osaka,"ＭＳ Ｐゴシック","MS PGothic",sans-serif; */
+	margin: 0px;
+	overflow: visible;
+	padding: 0px;
+}
+
+/* for IE8 */
+html>
+
+/**/
+body {
+	font-family: "游ゴシック Medium", "Yu Gothic Medium", "游ゴシック体", YuGothic, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, Osaka, sans-serif;
+	font-size: 75%;
+}
+
+/* for IE7 */
+*+html body {
+	font-family: "游ゴシック Medium", "Yu Gothic Medium", "游ゴシック体", YuGothic, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, Osaka, sans-serif;
+	font-size: 75%;
+}
+
+/* for IE6 */
+* html body {
+	font-family: "游ゴシック Medium", "Yu Gothic Medium", "游ゴシック体", YuGothic, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, Osaka, sans-serif;
+	font-size: 75%;
+}
+
+/* --OTHER TAGS-- */
+.iepngfix {
+	behavior: expression(IEPNGFIX.fix(this));
+}
+
+a {
+	overflow: hidden;
+}
+
+a img,
+img {
+	vertical-align: bottom;
+	margin-top: 0px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	padding-top: 0px;
+	padding-right: 0px;
+	padding-bottom: 0px;
+	padding-left: 0px;
+	border: none !important;
+}
+
+a:hover img {
+	opacity: 0.7;
+	filter: alpha(opacity=70);
+	-moz-opacity: 0.7;
+}
+
+abbr,
+acronym {
+	border: 0;
+}
+
+address,
+caption,
+cite,
+code,
+dfn,
+em,
+th,
+strong,
+var {
+	font-style: normal;
+	font-weight: normal;
+}
+
+blockquote,
+dd,
+div,
+dl,
+dt,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+ol,
+p,
+pre,
+span,
+td,
+th,
+ul {
+	margin: 0px;
+	padding: 0px;
+	line-height: none;
+}
+
+code,
+kbd,
+pre,
+samp,
+tt {
+	font-family: monospace;
+	line-height: 100%;
+}
+
+/* for IE7 */
+*+html code,
+*+html kbd,
+*+html pre,
+*+html samp,
+*+html tt {
+	font-size: 108%;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+	font-size: 100%;
+	font-weight: normal;
+}
+
+ol,
+ul {
+	list-style: none;
+}
+
+q:before,
+q:after {
+	content: '';
+}
+
+/* form */
+button,
+fieldset,
+form,
+input,
+label,
+legend,
+select,
+textarea {
+	/*font-family:inherit;*/
+	font-family: "游ゴシック Medium", "Yu Gothic Medium", "游ゴシック体", YuGothic, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, Osaka, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
+	font-size: 100%;
+	font-style: inherit;
+	font-weight: inherit;
+	margin: 0;
+	padding: 0;
+	vertical-align: baseline;
+}
+
+/* for IE6 */
+* html input,
+* html textarea {
+	font-family: 'ＭＳ Ｐゴシック';
+}
+
+/* for IE7 */
+*+html input,
+*+html textarea {
+	font-family: 'メイリオ', 'ＭＳ Ｐゴシック';
+}
+
+input[type="radio"] {
+	width: 20px;
+}
+
+input[type="checkbox"] {
+	width: 18px !important;
+	height: 18px !important;
+}
+
+/* tables still need 'cellspacing="0"' */
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+	font-size: 100%;
+	/* border: 1px solid #000; */
+	height: 100%;
+	background: #FFF;
+}
+
+table tbody {
+	height: calc(100%);
+	overflow: auto;
+	display: block;
+	/* box-shadow: inset 0px -5px 5px 0 rgb(0 0 0 / 10%); */
+}
+
+table tbody::-webkit-scrollbar {
+	display: none;
+}
+
+
+table tr {
+	display: table;
+	table-layout: fixed;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+table tr.activeTr {
+	background-color: rgb(214, 250, 255) !important;
+}
+
+.frm-table table th:last-child,
+.frm-table table td:last-child {
+	border-right: 1px solid var(--main);
+}
+
+
+/* table tr.newRow{
+	color: #FFF;
+	background: red!important;
+} */
+table th {
+	border-left: 1px solid var(--main);
+	font-weight: 600;
+	text-align: center;
+	font-size: 1.2em;
+}
+
+table td {
+	border-left: 1px solid var(--main);
+	border-bottom: 1px solid var(--main);
+	text-align: center;
+	font-size: 1.2em;
+}
+
+table tbody tr:nth-child(even){
+	background: #f7f7f7;
+}
+
+
+
+/*
+---------------------------------------------------------------------
+	basic.css ver 1.1 [2008/11/25] 
+	*This document validates as CSS level 3
+	*GNU General Public License v3
+	*http://higash.net/labo/
+
+	Modify YUI Base CSS
+	*Copyright (c) 2008, Yahoo! Inc. All rights reserved.
+	*http://developer.yahoo.com/yui/license.html
+	
+	Modify Formy CSS Form Framework 0.8(beta)
+	*GNU General Public License v2
+	*http://code.google.com/p/formy-css-framework/
+---------------------------------------------------------------------
+*/
+
+/* --FORM-- */
+fieldset {
+	border: 1px solid #ccc;
+	margin-bottom: 1em;
+	padding: 0 1em 1em 1em;
+}
+
+input,
+textarea {
+	font-family: "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, Osaka, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
+	line-height: 1.4;
+	font-size: 1.1em;
+	padding: 0;
+	vertical-align: baseline;
+	/* border: 2px solid #000; */
+	border-width: 1px;
+	border-color: -internal-light-dark(rgb(118, 118, 118), rgb(133, 133, 133));
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+	vertical-align: baseline;
+}
+
+input[type="submit"] {
+	padding: 0.1em;
+}
+
+legend {
+	background: #fff;
+	padding: 0.3em;
+}
+
+select {
+	font-family: "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, Osaka, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
+	padding: 0;
+	/* border: 2px solid #000; */
+	font-size: 1.1em;
+}
+
+textarea {
+	resize: none;
+	height: 100%;
+	padding: 5px;
+	box-sizing: border-box;
+}
+
+label {
+	font-size: 1.2em;
+}
+
+/* for IE6 */
+* html input {
+	padding: 0.1em;
+}
+
+* html input.checkbox,
+* html input.radio {
+	vertical-align: -0.3em;
+}
+
+* html input.submit {
+	line-height: 1.2;
+	padding-top: 0.2em;
+}
+
+* html select {
+	vertical-align: -0.2em;
+}
+
+/* for IE7 */
+*+html input {
+	padding: 0.1em;
+}
+
+*+html input.submit {
+	line-height: 1.2;
+	padding-top: 0.2em;
+}
+
+*+html select {
+	vertical-align: -0.2em;
+}
+
+/* for Opera9.27 */
+html:first-child input {
+	padding: 0.1em;
+}
+
+/* html:first-child input[type="checkbox"],
+html:first-child input[type="radio"] {
+	vertical-align: middle;
+	margin-right: 5px;
+} */
+
+html:first-child input[type="submit"] {
+	padding: 0.3em;
+}
+
+html:first-child select {
+	padding: 0.2em 0.5em;
+}
+
+/* for Opera9.5+ [Safari3 & Chrome] */
+body:first-of-type input {
+	padding: 0.1em;
+}
+
+/* body:first-of-type input[type="checkbox"],
+body:first-of-type input[type="radio"] {
+	vertical-align: middle;
+	margin-right: 5px;
+} */
+
+body:first-of-type input[type="submit"] {
+	padding: 0.3em 0.3em 0.2em 0.3em;
+}
+
+/* for Safari3 & Chrome */
+html:not(:only-child:only-child) input {
+	padding: 0;
+	vertical-align: middle;
+}
+
+html:not(:only-child:only-child) select {
+	vertical-align: 0;
+}
+
+/* form input[type="checkbox"] {
+	width: 15px;
+} */
+
+/* --HEADLINE-- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	margin: 0;
+	/*margin:1em 0;*/
+}
+
+/* --LIST-- */
+ol,
+ul {
+	margin: 0;
+	/*margin:1em 1em 1em 3em;*/
+}
+
+ol li {
+	list-style: none;
+	/*list-style:decimal outside;*/
+}
+
+ul li {
+	list-style: none;
+	/*list-style:disc outside;*/
+}
+
+/* --OTHER TAGS-- */
+abbr,
+acronym {
+	border-bottom: 1px dotted;
+	cursor: help;
+}
+
+caption {
+	margin-bottom: 0.5em;
+}
+
+em,
+strong {
+	font-weight: bold;
+}
+
+/*	
+p {
+	margin-bottom: 1em;
+	text-align: left;
+	width: auto;
+}
+*/
+/* clearfix */
+.clearfix {
+	zoom: 1;
+}
+
+.clearfix:after {
+	display: block;
+	clear: both;
+	height: 0;
+	visibility: hidden;
+	line-height: 0;
+	content: " ";
+}
+
+/* for IE6 */
+* html .clearfix {
+	display: inline-block;
+}
+
+/* for IE7 */
+*+html .clearfix {
+	display: inline-block;
+}
+
+/* IE8ハック */
+html>
+
+/**/
+body .clearfix {
+	display
+	/*\**/
+	: block\9
+}
+
+/* no ie mac \*/
+* html .clearfix {
+	height: 1%;
+}
+
+.clearfix {
+	display: block;
+}
+
+header,
+footer,
+nav,
+section,
+article,
+figure,
+aside {
+	display: block;
+}
+
+.clear {
+	clear: both;
+}
+
+.st {
+	font-weight: bold;
+}
+
+.fl {
+	float: left;
+}
+
+.fr {
+	float: right;
+}
+
+.tac {
+	text-align: center !important;
+}
+
+.tar {
+	text-align: right !important;
+}
+
+.tal {
+	text-align: left !important;
+}
+
+.vam {
+	vertical-align: middle;
+}
+
+.jcc {
+	justify-content: center;
+}
+
+/* Loading
+-----------------------------------------------------------------*/
+
+#loading {
+	display: table;
+	width: 100%;
+	height: 100%;
+	position: fixed;
+	top: 0;
+	left: 0;
+	background-color: #fff;
+	opacity: 0.8;
+	z-index: 300000;
+}
+
+#loading .loadingMsg {
+	display: table-cell;
+	text-align: center;
+	vertical-align: middle;
+	padding-top: 140px;
+	background: url("../images/loading.gif") center center no-repeat;
+}
+
+#subLoading {
+	display: table;
+	position: fixed;
+	top: 65px;
+	background-color: #fff;
+	opacity: 0.8;
+	z-index: 300000;
+}
+
+#subLoading .loadingMsg {
+	display: table-cell;
+	text-align: center;
+	vertical-align: middle;
+	padding-top: 140px;
+	background: url("../images/loading.gif") center center no-repeat;
+}
+
+/* Margin
+-----------------------------------------------------------------*/
+.mb5 {
+	margin-bottom: 5px;
+}
+
+.mb10 {
+	margin-bottom: 10px;
+}
+
+.mb15 {
+	margin-bottom: 15px;
+}
+
+.mb20 {
+	margin-bottom: 20px;
+}
+
+.mb25 {
+	margin-bottom: 25px;
+}
+
+.mb30 {
+	margin-bottom: 30px;
+}
+
+.mb40 {
+	margin-bottom: 40px;
+}
+
+.mb50 {
+	margin-bottom: 50px;
+}
+
+.mb60 {
+	margin-bottom: 60px;
+}
+
+.mt5 {
+	margin-top: 5px;
+}
+
+.mt10 {
+	margin-top: 10px;
+}
+
+.mt15 {
+	margin-top: 15px;
+}
+
+.mt20 {
+	margin-top: 20px;
+}
+
+.mt25 {
+	margin-top: 25px;
+}
+
+.mt30 {
+	margin-top: 30px;
+}
+
+.mt40 {
+	margin-top: 40px;
+}
+
+.mt50 {
+	margin-top: 50px;
+}
+
+.mt60 {
+	margin-top: 60px;
+}
+
+.mt-1em {
+	margin-top: 1em !important;
+}
+
+.dialog {
+	display: none;
+}
+
+.h100 {
+	height: 100px !important;
+}
+
+.flex {
+	display: flex;
+	align-items: center;
+}
+
+.column {
+	flex-direction: column;
+}
+
+.table {
+	display: none !important;
+}
+
+.disnon {
+	display: none !important;
+}
+
+.activeBtn {
+	/* color: #000!important;
+	background: #e6e6e6 !important; */
+	font-weight: bold;
+
+}
+
+.sub-table {
+	height: calc(100% - 105px);
+}
+
+.sm-table {
+	/* min-height: 300px !important; */
+	box-shadow: inset 0px -5px 5px 0 rgb(0 0 0 / 10%);
+}
+
+.bt {
+	border-top: 1px solid #000 !important;
+}
+
+.bb {
+	border-bottom: 1px solid #000 !important;
+}
+
+.br {
+	border-right: 1px solid #000 !important;
+}
+
+.br-0 {
+	border-right: 0 !important;
+}
+
+
+
+/* .btnDelete{
+	color: red !important;
+	border: 1px solid red !important;
+} */
+
+table.hoverable tbody tr:hover {
+	cursor: pointer;
+	background-color: lightblue !important;
+}
+
+.h-150 {
+	height: 150px !important;
+}
+
+.bg-lightblue {
+	background-color: lightblue;
+}
+
+.bg-yellow {
+	background-color: lightyellow;
+}
+
+input.error,
+textarea.error,
+select.error {
+	border: 1px solid red !important;
+	outline: 1px solid red !important;
+}
+
+iframe {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+}
+
+iframe .container {
+	margin-top: 0;
+}
+
+.errDownload {
+	cursor: pointer;
+}
+
+.w_50px {
+	width: 50px;
+}
+.w_150px {
+	width: 125px;
+}
+
+.h_100 {
+	height: 100%;
+}
+
+.pg_num {
+	font-size: 1.3em;
+}
+
+.logout {
+	cursor: pointer;
+}
+
+.err_msg {
+	color: red;
+	font-size: 1.5em;
+	text-align: center;
+	position: sticky;
+	top: -6px;
+	background: #FFF;
+	display: none;
+}
+
+.inputError {
+	color: red;
+}
+
+div.inputError input,
+input.inputError {
+	color: red;
+	outline-color: red;
+	border-color: red;
+}
+
+.color-red {
+	color: red !important;
+}
+
+;
+
+.b-red {
+	border-color: red !important;
+}
+
+dd.selectorBox div {
+	width: 25%;
+	display: flex;
+	align-items: center;
+}
+
+.ip_w50px {
+	width: 50px !important;
+}
+
+.error-row {
+	width: 100%;
+	padding: 4px;
+	margin: 2px 0px;
+	font-size: 1.5em;
+	box-sizing: border-box;
+	color: red;
+	background: #FFF;
+	border: 1px solid red;
+	border-radius: 10px;
+	text-align: center;
+	display: none;
+}
+
+.w_100px {
+	width: 100px;
+}
+
+.error {
+	color: red;
+	font-size: 1.6em;
+	/*text-align: center;*/
+}
+
+/* 
+  LIAM 
+  2023/07/04 追加
+*/
+input[type="file"] {
+	padding: 2px !important;
+}
+
+/* 
+  LIAM 
+  2023/07/11 追加
+*/
+#tokuisakiTelFrm {
+	width: 100%;
+	/* height: 170px; */
+	height: 181px;
+	display: block;
+}
+
+#codeListDialog table,
+#tokuisakiTelFrm table {
+	border: 2px solid var(--main);
+}
+
+#codeListDialog table th,
+#tokuisakiTelFrm table th,
+#tokuisakiTelFrm table td {
+	border-left: none;
+	padding: 5px;
+}
+
+#codeListDialog table td {
+	border-right: 1px solid;
+}
+
+#codeListDialog table td.group-1 {
+	background: #ffffc7;
+}
+
+#codeListDialog table td.group-2 {
+	background: #abf3ab;
+}
+
+#codeListDialog table td.group-3 {
+	background: #c7f9f5;
+}
+
+#codeListDialog table td.group-4 {
+	background: rgb(224 243 249);
+}
+
+#codeListDialog table td.group-5 {
+	background: rgb(236 207 255);
+}
+
+#codeListDialog table td.group-6 {
+	background: rgb(238, 169, 255);
+}
+
+#codeListDialog table td.group-7 {
+	background: rgb(147 255 250);
+}
+
+#codeListDialog table td.group-8 {
+	background: rgb(143 227 255);
+}
+
+#codeListDialog table td.group-9 {
+	background: orange;
+}
+
+#codeListDialog table td.group-10 {
+	background: rgb(255 163 248);
+}
+
+
+#codeListDialog table td:nth-child(even) {
+	border-right: 2px solid;
+}
+
+#codeListDialog table td:last-child {
+	border-right: none;
+}
+
+#codeListDialog table th,
+#tokuisakiTelFrm table th {
+	border-bottom: 2px solid var(--main);
+	font-size: 1.5em;
+	cursor: pointer;
+}
+
+#codeListDialog table #sort.desc:after {
+	content: "▲";
+	font-size: 14px;
+}
+
+#codeListDialog table #sort.asc:after {
+	content: "▼";
+	font-size: 14px;
+}
+
+#codeListDialog table td,
+#tokuisakiTelFrm table td {
+	font-size: 1.4em;
+}
+
+#tokuisakiTelFrm table td img {
+	cursor: pointer;
+	margin-left: 5px;
+}
+
+#tokuisakiTelFrm table tbody::-webkit-scrollbar {
+	display: block;
+}
+
+#tokuisakiTelFrm table tbody::-webkit-scrollbar-track {
+	-webkit-box-shadow: auto;
+	-webkit-border-radius: auto;
+	border-radius: auto;
+	background: auto;
+	border-left: 1px solid black;
+}
+
+#tokuisakiTelFrm table tbody::-webkit-scrollbar-thumb {
+	-webkit-border-radius: auto;
+	border-radius: auto;
+	background: #ccc;
+	-webkit-box-shadow: auto;
+	border-left: 1px solid black;
+}
+
+#tokuisakiTelFrm table tbody::-webkit-scrollbar-thumb:window-inactive {
+	background: auto;
+}
+
+#codeListDialog table tr:last-child td,
+#tokuisakiTelFrm table tr:last-child td {
+	border-bottom: 0;
+}
+
+/* #codeListDialog table tr:nth-child(even), */
+#tokuisakiTelFrm table tr:nth-child(even) {
+	background: #e3e3e3;
+}
+
+/* #tokuisakiTelFrm table tbody tr:hover{
+	cursor: pointer;
+	background: lightblue;
+} */
+#codeListDialog table tbody td{
+	padding: 0;
+	font-size: 1.3em;
+}
+
+table.kenpin-table th{
+	background: #f7f7f7;
+}
+
+#checkDialog div{
+	font-size: 1.5em;
+	text-align: center;
+}

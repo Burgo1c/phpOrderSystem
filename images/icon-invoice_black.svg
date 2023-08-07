@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="500"
+    height="500" viewBox="0 0 500 500" xml:space="preserve">
+    <desc>Created with Fabric.js 4.6.0</desc>
+    <defs>
+    </defs>
+    <g transform="matrix(1.77 0 0 1.77 250 250)" id="xmUY4UZXP7vkuzrcRJGsu">
+        <path
+            style="stroke: rgb(0,0,0); stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: #444; fill-rule: nonzero; opacity: 1;"
+            vector-effect="non-scaling-stroke" transform=" translate(-70.17, -88.68)"
+            d="M 118.73001 0 L 140.33605 21.60604 L 112.83018 49.11191 L 137.64855 49.11191 L 137.64855 79.66747000000001 L 85.26834 79.66747000000001 L 85.26834 101.49462000000001 L 137.64855 101.49462000000001 L 137.64855 132.05018 L 85.26834 132.05018 L 85.26834 177.36877 L 54.712779999999995 177.36877 L 54.712779999999995 132.05018 L 2.4633599999999944 132.05018 L 2.4633599999999944 101.49462000000001 L 54.712779999999995 101.49462000000001 L 54.712779999999995 79.66747000000001 L 2.3325599999999937 79.66747000000001 L 2.3325599999999937 49.11191000000001 L 27.505869999999994 49.11191000000001 L -7.105427357601002e-15 21.606040000000007 L 21.606039999999993 7.105427357601002e-15 L 70.05595 48.44991000000001 L 69.39394999999999 49.11191000000001 L 70.36299999999999 49.11191000000001 L 69.99053999999998 48.73945000000001 z"
+            stroke-linecap="round" />
+    </g>
+    <g transform="matrix(5.38 0 0 5.38 250.05 250)" id="isuhHf5s-2gzbvpVy2MHz">
+        <path
+            style="stroke: #444; stroke-width: 4; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: none; fill-rule: nonzero; opacity: 1;"
+            vector-effect="non-scaling-stroke" transform=" translate(0, 0)"
+            d="M -46.2963 -46.2963 L 46.29629 -46.2963 L 46.29629 46.29629 L -46.2963 46.29629 z"
+            stroke-linecap="round" />
+    </g>
+</svg>
