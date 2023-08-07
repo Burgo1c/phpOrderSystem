@@ -5457,7 +5457,7 @@ try {
                 // 予備
                 $str .= mb_convert_encoding(str_repeat(" ", 409), 'CP932', 'UTF-8');
 
-                if (strlen($str) != 992) {
+                if (strlen($str) != SHUKA_SEND_BYTE) {
                     fclose($fp);
                     unlink($file);
                     throw new Exception("送信データのバイト数が正しくありません。\n" . strlen($str) . "バイトが作成されましたが、992バイトが必要です。");
