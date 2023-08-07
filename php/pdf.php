@@ -2176,9 +2176,9 @@ function A3Denpyo($fname, $data)
                 //得意先の売上区分 == 売掛
                 if ($data[0]["sale_kbn"] === "3") {
                     //$pdf->setFillColor(0, 0, 0);
-                    $pdf->SetLineStyle(array('width' => 0.5, 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => array(255, 0, 0)));
-                    $pdf->SetTextColor(0, 0, 0);
-                    $pdf->MultiCell(93, 140, '', 1, 'J', false, 0, 318, 152);
+                    //$pdf->SetLineStyle(array('width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => array(255, 255, 255)));
+                    //$pdf->SetTextColor(255, 255, 255);
+                    $pdf->MultiCell(93, 129, '', 0, 'J', true, 0, 318, 152);
                     //title
                     $pdf->SetFont('kozgopromedium', 'U', 16);
                     $pdf->MultiCell(35, "", "納品書(控え)", 0, "C", false, 0, 320, 158);
@@ -2290,12 +2290,10 @@ function A3Denpyo($fname, $data)
 
                     $pdf->MultiCell(50, 5, "※は軽減税率対象です", 0, "L", false, 0, 322, 260);
 
-                    $pdf->write1DBarcode($barcode2, 'CODABAR', 350, 281, 50, 6, 0.4);
+                    $pdf->write1DBarcode($barcode2, 'CODABAR', 350, 282, 50, 6, 0.4);
 
                     //$pdf->SetTextColor(0, 0, 0);
-                    $pdf->MultiCell(50, 5, $barcode2, 0, "C", false, 0, 350, 287);
-
-                    //$pdf->setFontSize(9);
+                    $pdf->MultiCell(50, 5, $barcode2, 0, "C", false, 0, 350, 288);
                 } else {
                     //title
                     $pdf->SetFont('kozgopromedium', 'U', 16);
@@ -2505,13 +2503,13 @@ function A3Denpyo($fname, $data)
             $nouhin_y += 5;
 
             $pdf->SetFont('kozgopromedium', '', 8);
-            if ($data[0]["sale_kbn"] === "3") {
+           // if ($data[0]["sale_kbn"] === "3") {
                 //$pdf->SetTextColor(255, 255, 255);
                 //$pdf->SetTextColor(255, 0, 0);
+            //    $pdf->SetTextColor(0, 0, 0);
+           // } else {
                 $pdf->SetTextColor(0, 0, 0);
-            } else {
-                $pdf->SetTextColor(0, 0, 0);
-            }
+           // }
             //denpyo table
             $pdf->setCellPaddings(null, null, null);
             $pdf->MultiCell(35, 5, $data[$i]["product_cd"] . " " . $product_nm_abrv, 0, "L", false, 0, 320, $denpyo_y);
