@@ -571,7 +571,7 @@ try {
             break;
     }
 } catch (Exception $e) {
-
+    error_log($e->getMessage());
     if ($dbh != null) {
         $dbh->rollBack();
     }

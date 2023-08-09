@@ -37,6 +37,7 @@ function fileErrorCheck($err)
     return $msg;
 };
 
+$log = Logger::getInstance();
 $dbh = null;
 $sth = null;
 $type = isset($_REQUEST["Type"]) ? $_REQUEST["Type"] : "";
@@ -51,6 +52,7 @@ try {
     $current_date = date("Y/m/d H:i:s");
     $current_date_numeric = date("YmdHis");
     $dbh->beginTransaction();
+    $log->debug($type);
     switch ($type) {
             /** ログイン **/
         case "login":
@@ -4856,7 +4858,7 @@ try {
         case "shukaDataSend":
             session_start();
             $_SESSION['created'] = time();
-
+            $log->info("出荷データ送信開始。");
             //必須項目を確認
             if (!isset($_REQUEST["shuka_dt"]) || $_REQUEST["shuka_dt"] == "") throw new Exception("出荷日を選択してください。");
 
@@ -4878,7 +4880,7 @@ try {
                     $_SESSION["shuka_send_time"] = time();
                 }
             }
-
+            $log->info("15分開け => OK");
             //GET FTP INFO
             //SFTP送信情報・メーカー送信情報
             $sql = "SELECT 
@@ -4902,7 +4904,7 @@ try {
             $ftp_info = $sth->fetch(PDO::FETCH_ASSOC);
 
             if (count($ftp_info) == 0) throw new Exception("送信情報がありません。");
-
+            $log->info("SFTP送信情報 => OK");
             //PRODUCT SQL
             //USE IN LOOP
             //商品取得SQL
@@ -4955,18 +4957,20 @@ try {
             $list = $sth->fetchAll(PDO::FETCH_ASSOC);
 
             if (count($list) == 0) throw new Exception("送信対象のデータが存在しません。");
-
+            $log->info("送信データ => OK");
             //合計件数・合計個数
             $total_kensu = count($list);
             $total_kosu = number_format(array_sum(array_column($list, "kosu")));
-
+            $log->info("合計件数・合計個数 => OK");
+            $log->info("FILE CREATE START");
             //CREATE YAMATO DAT FILE
             //ファイルを開く
             $file = YAMATO_FOLDER . YAMATO_FILE . "_" .  date('YmdHis');
             $tmp = TEMP_FOLDER . YAMATO_FILE . "_" .  date('YmdHis') . ".txt";
             $fp = fopen($file, 'w');
             $tmpFP = fopen($tmp, 'w');
-
+            $log->info("File create => OK");
+            $log->info("FILE WRITE START");
             //WRITE TO FILE
             //書き込むデータを作成
             //バイト数は固定
@@ -5097,7 +5101,7 @@ try {
             //ファイルを閉じる
             fclose($fp);
             fclose($tmpFP);
-
+            $log->info("File write => OK");
             /**
              * SEND FILE
              */
@@ -5116,23 +5120,23 @@ try {
             /**
              * SFTP
              */
-
+            $log->info("SFTP START");
             //SSH Connection
             //SSH 接続
             $ssh_conn = ssh2_connect($ftp_host, $ftp_port);
-
+            
             if (!$ssh_conn) {
                 unlink($file);
                 throw new Exception("SFTPの接続に失敗しました。");
             }
-
+            $log->info("SSH => OK");
             //SSH Login
             //SSH ログイン
             if (!ssh2_auth_password($ssh_conn, $ftp_username, $ftp_userpass)) {
                 unlink($file);
                 throw new Exception("SFTPのログインに失敗しました。");
             }
-
+            $log->info("SSH ログイン => OK");
             //SFTP Connection
             //SFTP 接続
             $sftp_conn = ssh2_sftp($ssh_conn);
@@ -5141,7 +5145,7 @@ try {
                 unlink($file);
                 throw new Exception("ファイルシステムにアクセスできません。");
             }
-
+            $log->info("SFTP 接続 => OK");
             //OPEN Remote file
             //SFTP サーバーでファイルを開く
             $sftp_stream = fopen("ssh2.sftp://$sftp_conn/$ftp_file", 'w');
@@ -5150,7 +5154,7 @@ try {
                 unlink($file);
                 throw new Exception("リモートファイルが開けません。");
             }
-
+            $log->info("SFTP サーバーでファイルを開く => OK");
             //Get data from local file
             //送信データを取得
             $send_data = file_get_contents($file);
@@ -5159,14 +5163,14 @@ try {
                 unlink($file);
                 throw new Exception("送信ファイルが開けません。");
             }
-
+            $log->info("送信データを取得 => OK");
             //WRITE data to remote file
             //SFTP ファイルに書き込む
             if (fwrite($sftp_stream, $send_data) === false) {
                 unlink($file);
                 throw new Exception("SFTPの送信に失敗しました。");
             }
-
+            $log->info("SFTP ファイルに書き込む => OK");
             //Close remote file
             //SFTP ファイルを閉じる
             fclose($sftp_stream);
@@ -5174,11 +5178,11 @@ try {
             //Close sftp connection
             //SFTP 切断
             ssh2_disconnect($sftp_conn);
-
+            $log->info("SFTP 切断 => OK");
             //Close ssh server connection
             //SSH 切断
             ssh2_disconnect($ssh_conn);
-
+            $log->info("SSH 切断 => OK");
             //UPDATE t_sale_h
             //売上ヘッダーを更新
             //送信済フラグ・送信日
@@ -5201,7 +5205,7 @@ try {
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
-
+            $log->info("送信済フラグ・送信日更新 => OK");
             //INSERT LOG TABLE
             //送信ログに登録
             $sql = "INSERT INTO t_shuka_log(
@@ -5221,7 +5225,7 @@ try {
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
-
+            $log->info("送信ログに登録 => OK");
             //send mail
             //メールを送信
             $sql = "SELECT mail FROM m_mail;";
@@ -5251,6 +5255,8 @@ try {
 
             $dbh->commit();
             echo json_encode("OK", JSON_UNESCAPED_UNICODE);
+
+            $log->info("出荷予定データ送信が正常に終了しました。");
             break;
 
             /** 出荷データ送信ログ **/
@@ -5626,6 +5632,7 @@ try {
             echo json_encode("OK", JSON_UNESCAPED_UNICODE);
             break;
 
+            /** 受注の問い合わせ番号を取得 **/
         case "getInquireNo":
             if ($_REQUEST["order_no"] == "") throw new Exception("受注番号を指定してください。");
             $params = array();
@@ -5948,7 +5955,7 @@ try {
             break;
     }
 } catch (Exception $e) {
-
+    $log->error($e->getMessage());
     if ($dbh != null) {
         $dbh->rollBack();
     }
