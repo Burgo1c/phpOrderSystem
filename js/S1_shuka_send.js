@@ -102,7 +102,7 @@ const shukaDataLog = async () => {
         data.forEach(obj => {
             $(".log").append($('<option>', {
                 value: obj.shuka_dt,
-                text: `${obj.send_dt} 件数 [${obj.kensu}]件 個数 [${obj.kosu}]個`
+                text: `${obj.send_dt.substring(0, 19)} 件数 [${obj.kensu}]件 個数 [${obj.kosu}]個`
             }));
         });
 
