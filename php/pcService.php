@@ -120,17 +120,19 @@ try {
 
             //START SESSION
             session_start();
-            $_SESSION['created'] = time();
-            $_SESSION['errMsg'] = "";
-            $_SESSION['user_id'] = $list[0]["user_id"];
-            $_SESSION['user_nm'] = $list[0]["user_nm"];
-            $_SESSION['auth_cd'] = $list[0]["auth_cd"];
-            $_SESSION['code_list'] = $code_list;
-            $_SESSION["user_list"] = $user_list;
-            $_SESSION["order_no"] = $order_no;
-            $_SESSION["list_cnt"] = LIST_CNT;
-            $_SESSION["jikai_kbn_list"] = $jikai_kbn_list;
-            $_SESSION["shuka_send_time"] = null;
+            $_SESSION['created']            = time();
+            $_SESSION['errMsg']             = "";
+            $_SESSION['user_id']            = $list[0]["user_id"];
+            $_SESSION['user_nm']            = $list[0]["user_nm"];
+            $_SESSION['auth_cd']            = $list[0]["auth_cd"];
+            $_SESSION['code_list']          = $code_list;
+            $_SESSION["user_list"]          = $user_list;
+            $_SESSION["order_no"]           = $order_no;
+            $_SESSION["list_cnt"]           = LIST_CNT;
+            $_SESSION["jikai_kbn_list"]     = $jikai_kbn_list;
+            $_SESSION["shuka_send_time"]    = null;
+
+            logUserLogin($_REQUEST["user_id"]);
 
             echo json_encode("OK", JSON_UNESCAPED_UNICODE);
             break;
@@ -361,11 +363,11 @@ try {
                     , CURRENT_TIMESTAMP);";
 
             $params = array();
-            $params["user_id"] = $_REQUEST["user_id"];
-            $params["user_nm"] = $_REQUEST["user_nm"];
-            $params["password"] = password_hash($_REQUEST["password"], PASSWORD_BCRYPT, array('cost' => 12));
-            $params["auth_cd"] = $_REQUEST["auth_cd"];
-            $params["entry_user"] = $_SESSION["user_id"];
+            $params["user_id"]      = $_REQUEST["user_id"];
+            $params["user_nm"]      = $_REQUEST["user_nm"];
+            $params["password"]     = password_hash($_REQUEST["password"], PASSWORD_BCRYPT, array('cost' => 12));
+            $params["auth_cd"]      = $_REQUEST["auth_cd"];
+            $params["entry_user"]   = $_SESSION["user_id"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -389,10 +391,10 @@ try {
                     WHERE user_id = :user_id";
 
             $params = array();
-            $params["user_id"] = $_REQUEST["user_id"];
-            $params["user_nm"] = $_REQUEST["user_nm"];
-            $params["auth_cd"] = $_REQUEST["auth_cd"];
-            $params["update_user"] = $_SESSION["user_id"];
+            $params["user_id"]      = $_REQUEST["user_id"];
+            $params["user_nm"]      = $_REQUEST["user_nm"];
+            $params["auth_cd"]      = $_REQUEST["auth_cd"];
+            $params["update_user"]  = $_SESSION["user_id"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -614,50 +616,20 @@ try {
                 if ($zip == "") throw new Exception($_REQUEST["tokuisaki_zip"] . "がヤマト郵便番号対応仕分マスタに存在しません。");
             };
 
-            if (isset($_REQUEST["sale_reg"]) && $_REQUEST["sale_reg"] === "1") {
-                $sql  = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tokuisaki_tel;";
-                $params = array();
-                $params["tokuisaki_tel"] = $_REQUEST["tokuisaki_tel"];
-                // $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no IN (";
+            //PHONE CHECK
+            $rows = json_decode($_REQUEST["tel_rows"], true);
+            if (count($rows) == 0 || $_REQUEST["tel_rows"] == "") throw new Exception("追加電話番号を入力してください。");
 
-                $tel = $_REQUEST["tokuisaki_tel"];
-                // $sql .= "'$tel'";
+            $chk_sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no";
+            $chk_sth = $dbh->prepare($chk_sql);
+            $params = array();
 
-                //$lst4dig = substr($_REQUEST["tokuisaki_tel"], -4);
-                //$sql .= ", '$lst4dig'";
-
-                // if ($_REQUEST["tokuisaki_fax"] != "") {
-                //     $fax = $_REQUEST["tokuisaki_fax"];
-                //     $sql .= ", '$fax'";
-                // };
-
-                // if ($_REQUEST["fuzai_contact"] != "") {
-                //     $fuzai = $_REQUEST["fuzai_contact"];
-                //     $sql .= ", '$fuzai'";
-                // };
-                //  $sql .= ")";
-                $sth = $dbh->prepare($sql);
-                $sth->execute($params);
-                $cnt = $sth->fetchColumn();
-
-                //if ($cnt != 0) throw new Exception("代表電話、FAX番号、予備連絡先のいずれかはすでに別の得意先に登録されています。");
+            for ($i = 0; $i < count($rows); $i++) {
+                $tel = $rows[$i]["tel"];
+                $params["tel_no"] = $rows[$i]["tel"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
                 if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
-            } else {
-                //PHONE CHECK
-                $rows = json_decode($_REQUEST["tel_rows"], true);
-                if (count($rows) == 0 || $_REQUEST["tel_rows"] == "") throw new Exception("追加電話番号を入力してください。");
-
-                $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no";
-                $sth = $dbh->prepare(($sql));
-                $params = array();
-
-                for ($i = 0; $i < count($rows); $i++) {
-                    $tel = $rows[$i]["tel"];
-                    $params["tel_no"] = $rows[$i]["tel"];
-                    $sth->execute($params);
-                    $cnt = $sth->fetchColumn();
-                    if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
-                }
             }
 
             //INSERT TOKUISAKI
@@ -721,30 +693,30 @@ try {
                 , :search_flg);";
 
             $params = array();
-            $params["tokuisaki_nm"] = $_REQUEST["tokuisaki_nm"] ?? "";
-            $params["tokuisaki_kana"] = $_REQUEST["tokuisaki_kana"] ?? "";
-            $params["tokuisaki_zip"] = $_REQUEST["tokuisaki_zip"] ?? "";
-            $params["tokuisaki_adr_1"] = $_REQUEST["tokuisaki_adr_1"] ?? "";
-            $params["tokuisaki_adr_2"] = $_REQUEST["tokuisaki_adr_2"] ?? "";
-            $params["tokuisaki_adr_3"] = $_REQUEST["tokuisaki_adr_3"] ?? "";
-            $params["tokuisaki_tel"] = $_REQUEST["tokuisaki_tel"] ?? "";
-            $params["tokuisaki_fax"] =  $_REQUEST["tokuisaki_fax"] ?? "";
-            $params["delivery_kbn"] = $_REQUEST["delivery_kbn"] ?? "1";
-            $params["delivery_time_kbn"] = $_REQUEST["delivery_time_kbn"] ?? "1";
-            $params["delivery_time_hr"] = $_REQUEST["delivery_time_hr"] ?? "";
-            $params["delivery_time_min"] = $_REQUEST["delivery_time_min"] ?? "";
-            $params["delivery_instruct_kbn"] = $_REQUEST["delivery_instruct_kbn"] ?? "1";
-            $params["tanto_nm"] = $_REQUEST["tanto_nm"] ?? "";
-            $params["fuzai_contact"] = $_REQUEST["fuzai_contact"] ?? "";
-            $params["industry_cd"] = $_REQUEST["industry_cd"] ?? "1";
-            $params["order_print_kbn"] = $_REQUEST["order_print_kbn"] ?? "1";
-            $params["delivery_instruct"] = $_REQUEST["tokuisaki_delivery_instruct"] ?? "";
-            $params["bill_dt"] = $_REQUEST["bill_dt"] ?? "";
-            $params["sale_kbn"] = $_REQUEST["sales_kbn"] ?? "1";
-            $params["yamato_kbn"] = $_REQUEST["yamato_kbn"] ?? "0";
-            $params["comment"] = $_REQUEST["comment"] ?? "";
-            $params["entry_user_id"] = $_SESSION["user_id"];
-            $params["search_flg"] = $_REQUEST["search_flg"] ?? "1";
+            $params["tokuisaki_nm"]             = $_REQUEST["tokuisaki_nm"] ?? "";
+            $params["tokuisaki_kana"]           = $_REQUEST["tokuisaki_kana"] ?? "";
+            $params["tokuisaki_zip"]            = $_REQUEST["tokuisaki_zip"] ?? "";
+            $params["tokuisaki_adr_1"]          = $_REQUEST["tokuisaki_adr_1"] ?? "";
+            $params["tokuisaki_adr_2"]          = $_REQUEST["tokuisaki_adr_2"] ?? "";
+            $params["tokuisaki_adr_3"]          = $_REQUEST["tokuisaki_adr_3"] ?? "";
+            $params["tokuisaki_tel"]            = $_REQUEST["tokuisaki_tel"] ?? "";
+            $params["tokuisaki_fax"]            = $_REQUEST["tokuisaki_fax"] ?? "";
+            $params["delivery_kbn"]             = $_REQUEST["delivery_kbn"] ?? "1";
+            $params["delivery_time_kbn"]        = $_REQUEST["delivery_time_kbn"] ?? "1";
+            $params["delivery_time_hr"]         = $_REQUEST["delivery_time_hr"] ?? "";
+            $params["delivery_time_min"]        = $_REQUEST["delivery_time_min"] ?? "";
+            $params["delivery_instruct_kbn"]    = $_REQUEST["delivery_instruct_kbn"] ?? "1";
+            $params["tanto_nm"]                 = $_REQUEST["tanto_nm"] ?? "";
+            $params["fuzai_contact"]            = $_REQUEST["fuzai_contact"] ?? "";
+            $params["industry_cd"]              = $_REQUEST["industry_cd"] ?? "1";
+            $params["order_print_kbn"]          = $_REQUEST["order_print_kbn"] ?? "1";
+            $params["delivery_instruct"]        = $_REQUEST["tokuisaki_delivery_instruct"] ?? "";
+            $params["bill_dt"]                  = $_REQUEST["bill_dt"] ?? "";
+            $params["sale_kbn"]                 = $_REQUEST["sales_kbn"] ?? "1";
+            $params["yamato_kbn"]               = $_REQUEST["yamato_kbn"] ?? "0";
+            $params["comment"]                  = $_REQUEST["comment"] ?? "";
+            $params["entry_user_id"]            = $_SESSION["user_id"];
+            $params["search_flg"]               = $_REQUEST["search_flg"] ?? "1";
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -788,20 +760,19 @@ try {
                             , CURRENT_TIMESTAMP)";
 
             $params = array();
-            //$params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            $params["okurisaki_cd"] = sprintf("%010d", 1);
-            $params["okurisaki_nm"] = $_REQUEST["tokuisaki_nm"];
-            $params["okurisaki_kana"] = $_REQUEST["tokuisaki_kana"];
-            $params["okurisaki_zip"] = $_REQUEST["tokuisaki_zip"];
-            $params["okurisaki_adr_1"] = $_REQUEST["tokuisaki_adr_1"];
-            $params["okurisaki_adr_2"] = $_REQUEST["tokuisaki_adr_2"];
-            $params["okurisaki_adr_3"] = $_REQUEST["tokuisaki_adr_3"];
-            $params["okurisaki_tel"] = $_REQUEST["tokuisaki_tel"];
-            $params["okurisaki_fax"] = $_REQUEST["tokuisaki_fax"];
-            $params["tanto_nm"] = $_REQUEST["tanto_nm"];
-            $params["fuzai_contact"] = $_REQUEST["fuzai_contact"];
-            $params["delivery_instruct"] = $_REQUEST["tokuisaki_delivery_instruct"];
-            $params["user_id"] = $_SESSION["user_id"];
+            $params["okurisaki_cd"]         = sprintf("%010d", 1);
+            $params["okurisaki_nm"]         = $_REQUEST["tokuisaki_nm"];
+            $params["okurisaki_kana"]       = $_REQUEST["tokuisaki_kana"];
+            $params["okurisaki_zip"]        = $_REQUEST["tokuisaki_zip"];
+            $params["okurisaki_adr_1"]      = $_REQUEST["tokuisaki_adr_1"];
+            $params["okurisaki_adr_2"]      = $_REQUEST["tokuisaki_adr_2"];
+            $params["okurisaki_adr_3"]      = $_REQUEST["tokuisaki_adr_3"];
+            $params["okurisaki_tel"]        = $_REQUEST["tokuisaki_tel"];
+            $params["okurisaki_fax"]        = $_REQUEST["tokuisaki_fax"];
+            $params["tanto_nm"]             = $_REQUEST["tanto_nm"];
+            $params["fuzai_contact"]        = $_REQUEST["fuzai_contact"];
+            $params["delivery_instruct"]    = $_REQUEST["tokuisaki_delivery_instruct"];
+            $params["user_id"]              = $_SESSION["user_id"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -814,43 +785,34 @@ try {
                             currval('seq_tokuisaki_cd')
                             ,:tel_no)";
             $params = array();
-            $sth = $dbh->prepare($sql);
-            if (isset($_REQUEST["sale_reg"]) && $_REQUEST["sale_reg"] === "1") {
-                    $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
-                    $sth->execute($params);
+            $insert_sth = $dbh->prepare($sql);
 
-                // $params["tel_no"] = substr($_REQUEST["tokuisaki_tel"], -4);
-                // if ($params["tel_no"] !== $_REQUEST["tokuisaki_tel"]) {
-                //     $sth->execute($params);
-                // }
+            $rows = json_decode($_REQUEST["tel_rows"], true);
+            if (count($rows) == 0 || $_REQUEST["tel_rows"] == "") throw new Exception("追加電話番号を入力してください。");
+            for ($i = 0; $i < count($rows); $i++) {
+                $params["tel_no"] = $rows[$i]["tel"];
+                $insert_sth->execute($params);
+            };
 
-                //     if (
-                //         $_REQUEST["tokuisaki_fax"] !== "" &&
-                //         $_REQUEST["tokuisaki_fax"] !== $_REQUEST["tokuisaki_tel"] &&
-                //         $_REQUEST["tokuisaki_fax"] !== $_REQUEST["fuzai_contact"]
-                //     ) {
+            if ($_REQUEST["tokuisaki_fax"] !== "") {
+                $params = array();
+                $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $insert_sth->execute($params);
+                }
+            };
 
-                //         $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                //         $sth->execute($params);
-                //     }
-
-                //     if (
-                //         $_REQUEST["fuzai_contact"] !== "" &&
-                //         $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_tel"] &&
-                //         $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_fax"]
-                //     ) {
-
-                //         $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                //         $sth->execute($params);
-                //     };
-            } else {
-                $rows = json_decode($_REQUEST["tel_rows"], true);
-                if (count($rows) == 0 || $_REQUEST["tel_rows"] == "") throw new Exception("追加電話番号を入力してください。");
-                for ($i = 0; $i < count($rows); $i++) {
-                    $params["tel_no"] = $rows[$i]["tel"];
-                    $sth->execute($params);
-                };
-            }
+            if ($_REQUEST["fuzai_contact"] !== "") {
+                $params = array();
+                $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $insert_sth->execute($params);
+                }
+            };
 
             $sql = "SELECT currval('seq_tokuisaki_cd');";
             $sth = $dbh->prepare($sql);
@@ -860,6 +822,390 @@ try {
             $dbh->commit();
 
             echo json_encode($data, JSON_UNESCAPED_UNICODE);
+            break;
+
+        case "saleTokuisakiAdd":
+            session_start();
+            $_SESSION['created'] = time();
+
+            $sql  = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no;";
+            $params = array();
+            $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
+
+            $tel = $_REQUEST["tokuisaki_tel"];
+
+            $chk_sth = $dbh->prepare($sql);
+            $chk_sth->execute($params);
+            $cnt = $chk_sth->fetchColumn();
+
+            if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
+
+            //INSERT TOKUISAKI
+            $sql = "INSERT INTO m_tokuisaki (
+                tokuisaki_cd
+                , tokuisaki_nm
+                , tokuisaki_kana
+                , tokuisaki_zip
+                , tokuisaki_adr_1
+                , tokuisaki_adr_2
+                , tokuisaki_adr_3
+                , tokuisaki_tel
+                , tokuisaki_fax
+                , delivery_kbn
+                , delivery_time_kbn
+                , delivery_time_hr
+                , delivery_time_min
+                , delivery_instruct_kbn
+                , tanto_nm
+                , fuzai_contact
+                , industry_cd
+                , order_print_kbn
+                , delivery_instruct
+                , bill_dt
+                , sale_kbn
+                , yamato_kbn
+                , comment
+                , entry_user_id
+                , entry_date
+                , update_user_id
+                , update_date
+                , search_flg
+                ) VALUES (
+                nextval('seq_tokuisaki_cd')
+                , :tokuisaki_nm
+                , :tokuisaki_kana
+                , :tokuisaki_zip
+                , :tokuisaki_adr_1
+                , :tokuisaki_adr_2
+                , :tokuisaki_adr_3
+                , :tokuisaki_tel
+                , :tokuisaki_fax
+                , :delivery_kbn
+                , :delivery_time_kbn
+                , :delivery_time_hr
+                , :delivery_time_min
+                , :delivery_instruct_kbn
+                , :tanto_nm
+                , :fuzai_contact
+                , :industry_cd
+                , :order_print_kbn
+                , :delivery_instruct
+                , :bill_dt
+                , :sale_kbn
+                , :yamato_kbn
+                , :comment
+                , :entry_user_id
+                , CURRENT_TIMESTAMP
+                , :entry_user_id
+                , CURRENT_TIMESTAMP
+                , :search_flg);";
+
+            $params = array();
+            $params["tokuisaki_nm"]             = $_REQUEST["tokuisaki_nm"] ?? "";
+            $params["tokuisaki_kana"]           = $_REQUEST["tokuisaki_kana"] ?? "";
+            $params["tokuisaki_zip"]            = $_REQUEST["tokuisaki_zip"] ?? "";
+            $params["tokuisaki_adr_1"]          = $_REQUEST["tokuisaki_adr_1"] ?? "";
+            $params["tokuisaki_adr_2"]          = $_REQUEST["tokuisaki_adr_2"] ?? "";
+            $params["tokuisaki_adr_3"]          = $_REQUEST["tokuisaki_adr_3"] ?? "";
+            $params["tokuisaki_tel"]            = $_REQUEST["tokuisaki_tel"] ?? "";
+            $params["tokuisaki_fax"]            = $_REQUEST["tokuisaki_fax"] ?? "";
+            $params["delivery_kbn"]             = $_REQUEST["delivery_kbn"] ?? "1";
+            $params["delivery_time_kbn"]        = $_REQUEST["delivery_time_kbn"] ?? "1";
+            $params["delivery_time_hr"]         = $_REQUEST["delivery_time_hr"] ?? "";
+            $params["delivery_time_min"]        = $_REQUEST["delivery_time_min"] ?? "";
+            $params["delivery_instruct_kbn"]    = $_REQUEST["delivery_instruct_kbn"] ?? "1";
+            $params["tanto_nm"]                 = $_REQUEST["tanto_nm"] ?? "";
+            $params["fuzai_contact"]            = $_REQUEST["fuzai_contact"] ?? "";
+            $params["industry_cd"]              = $_REQUEST["industry_cd"] ?? "1";
+            $params["order_print_kbn"]          = $_REQUEST["order_print_kbn"] ?? "1";
+            $params["delivery_instruct"]        = $_REQUEST["tokuisaki_delivery_instruct"] ?? "";
+            $params["bill_dt"]                  = $_REQUEST["bill_dt"] ?? "";
+            $params["sale_kbn"]                 = $_REQUEST["sales_kbn"] ?? "1";
+            $params["yamato_kbn"]               = $_REQUEST["yamato_kbn"] ?? "0";
+            $params["comment"]                  = $_REQUEST["comment"] ?? "";
+            $params["entry_user_id"]            = $_SESSION["user_id"];
+            $params["search_flg"]               = $_REQUEST["search_flg"] ?? "1";
+
+            $sth = $dbh->prepare($sql);
+            $sth->execute($params);
+
+            //INSERT OKURISAKI
+            $sql = "INSERT INTO m_okurisaki(
+                            tokuisaki_cd
+                            , okurisaki_cd
+                            , okurisaki_nm
+                            , okurisaki_kana
+                            , okurisaki_zip
+                            , okurisaki_adr_1
+                            , okurisaki_adr_2
+                            , okurisaki_adr_3
+                            , okurisaki_tel
+                            , okurisaki_fax
+                            , tanto_nm
+                            , fuzai_contact
+                            , delivery_instruct
+                            , entry_user_id
+                            , entry_date
+                            , update_user_id
+                            , update_date
+                            )VALUES(
+                            currval('seq_tokuisaki_cd')
+                            , :okurisaki_cd
+                            , :okurisaki_nm
+                            , :okurisaki_kana
+                            , :okurisaki_zip
+                            , :okurisaki_adr_1
+                            , :okurisaki_adr_2
+                            , :okurisaki_adr_3
+                            , :okurisaki_tel
+                            , :okurisaki_fax
+                            , :tanto_nm
+                            , :fuzai_contact
+                            , :delivery_instruct
+                            , :user_id
+                            , CURRENT_TIMESTAMP
+                            , :user_id
+                            , CURRENT_TIMESTAMP)";
+
+            $params = array();
+            $params["okurisaki_cd"]         = sprintf("%010d", 1);
+            $params["okurisaki_nm"]         = $_REQUEST["tokuisaki_nm"];
+            $params["okurisaki_kana"]       = $_REQUEST["tokuisaki_kana"];
+            $params["okurisaki_zip"]        = $_REQUEST["tokuisaki_zip"];
+            $params["okurisaki_adr_1"]      = $_REQUEST["tokuisaki_adr_1"];
+            $params["okurisaki_adr_2"]      = $_REQUEST["tokuisaki_adr_2"];
+            $params["okurisaki_adr_3"]      = $_REQUEST["tokuisaki_adr_3"];
+            $params["okurisaki_tel"]        = $_REQUEST["tokuisaki_tel"];
+            $params["okurisaki_fax"]        = $_REQUEST["tokuisaki_fax"];
+            $params["tanto_nm"]             = $_REQUEST["tanto_nm"];
+            $params["fuzai_contact"]        = $_REQUEST["fuzai_contact"];
+            $params["delivery_instruct"]    = $_REQUEST["tokuisaki_delivery_instruct"];
+            $params["user_id"]              = $_SESSION["user_id"];
+
+            $sth = $dbh->prepare($sql);
+            $sth->execute($params);
+
+            //TOKUISAKI TEL INSERT
+            $sql = "INSERT INTO m_tokuisaki_tel(
+                            tokuisaki_cd
+                            ,tel_no
+                            )VALUES(
+                            currval('seq_tokuisaki_cd')
+                            ,:tel_no)";
+            $params = array();
+            $insert_sth = $dbh->prepare($sql);
+
+            $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
+            $insert_sth->execute($params);
+
+            if ($_REQUEST["tokuisaki_fax"] !== "") {
+                $params = array();
+                $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $insert_sth->execute($params);
+                }
+            };
+
+            if ($_REQUEST["fuzai_contact"] !== "") {
+                $params = array();
+                $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $insert_sth->execute($params);
+                }
+            };
+
+            //RETURN tokuisaki_cd
+            $sql = "SELECT currval('seq_tokuisaki_cd');";
+            $sth = $dbh->prepare($sql);
+            $sth->execute();
+            $data = $sth->fetchColumn();
+
+            $dbh->commit();
+
+            echo json_encode($data, JSON_UNESCAPED_UNICODE);
+            break;
+
+        case "saleTokuisakiUpdate":
+            session_start();
+            $_SESSION['created'] = time();
+
+            if (!isset($_REQUEST["tokuisaki_cd"]) || $_REQUEST["tokuisaki_cd"] == "") throw new Exception("得意先を入力してください。");
+
+            //TOKUISAKI TEL DELETE        
+            $delete_sql = "DELETE FROM m_tokuisaki_tel 
+             WHERE tokuisaki_cd = :tokuisaki_cd
+             AND tel_no = :tel_no;";
+            $delete_sth = $dbh->prepare($delete_sql);
+
+            $params = array();
+            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+
+            //tel
+            if ($_REQUEST["tokuisaki_tel"] != "") {
+                $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
+                $delete_sth->execute($params);
+
+                $params["tel_no"] = substr($_REQUEST["tokuisaki_tel"], -4);
+                $delete_sth->execute($params);
+            }
+            //fax
+            if ($_REQUEST["tokuisaki_fax"] != "") {
+                $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                $delete_sth->execute($params);
+            }
+            //fuzai
+            if ($_REQUEST["fuzai_contact"] != "") {
+                $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                $delete_sth->execute($params);
+            }
+
+            //PHONE CHECK
+            $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no;";
+            $params = array();
+            $tel = $_REQUEST["tokuisaki_tel"];
+            $params["tel_no"] = $tel;
+
+            $chk_sth = $dbh->prepare($sql);
+            $chk_sth->execute($params);
+            $cnt = $chk_sth->fetchColumn();
+
+            if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
+
+            //TOKUISAKI TEL INSERT
+            $sql = "INSERT INTO m_tokuisaki_tel(
+                    tokuisaki_cd
+                    ,tel_no
+                    , entry_date
+                    , update_date
+                    )VALUES(
+                    :tokuisaki_cd
+                    ,:tel_no
+                    , CURRENT_TIMESTAMP
+                    , CURRENT_TIMESTAMP)";
+
+            $insert_sth = $dbh->prepare($sql);
+
+            $params = array();
+            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+            $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
+            $insert_sth->execute($params);
+
+            if ($_REQUEST["tokuisaki_fax"] !== "") {
+                $params = array();
+                $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $params = array();
+                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+                    $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                    $insert_sth->execute($params);
+                }
+            };
+
+            if ($_REQUEST["fuzai_contact"] !== "") {
+                $params = array();
+                $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $params = array();
+                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+                    $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                    $insert_sth->execute($params);
+                }
+            };
+
+            //UPDATE TOKUISAKI
+            $sql = "UPDATE m_tokuisaki SET 
+                            tokuisaki_nm = :tokuisaki_nm
+                            , tokuisaki_kana = :tokuisaki_kana
+                            , tokuisaki_zip = :tokuisaki_zip
+                            , tokuisaki_adr_1 = :tokuisaki_adr_1
+                            , tokuisaki_adr_2 = :tokuisaki_adr_2
+                            , tokuisaki_adr_3 = :tokuisaki_adr_3
+                            , tokuisaki_tel = :tokuisaki_tel
+                            , tokuisaki_fax = :tokuisaki_fax
+                            , tanto_nm = :tanto_nm
+                            , fuzai_contact = :fuzai_contact
+                            , industry_cd = :industry_cd
+                            , delivery_instruct = :delivery_instruct
+                            , comment = :comment
+                            , update_user_id = :update_id
+                            , update_date = CURRENT_TIMESTAMP
+                            WHERE tokuisaki_cd = :tokuisaki_cd";
+
+            $params = array();
+            $params["tokuisaki_cd"]         = $_REQUEST["tokuisaki_cd"];
+            $params["tokuisaki_nm"]         = $_REQUEST["tokuisaki_nm"];
+            $params["tokuisaki_kana"]       = $_REQUEST["tokuisaki_kana"];
+            $params["tokuisaki_zip"]        = $_REQUEST["tokuisaki_zip"];
+            $params["tokuisaki_adr_1"]      = $_REQUEST["tokuisaki_adr_1"];
+            $params["tokuisaki_adr_2"]      = $_REQUEST["tokuisaki_adr_2"];
+            $params["tokuisaki_adr_3"]      = $_REQUEST["tokuisaki_adr_3"];
+            $params["tokuisaki_tel"]        = $_REQUEST["tokuisaki_tel"];
+            $params["tokuisaki_fax"]        = $_REQUEST["tokuisaki_fax"];
+            $params["delivery_instruct"]    = $_REQUEST["tokuisaki_delivery_instruct"];
+            $params["industry_cd"]          = $_REQUEST["industry_cd"] ?? "1";
+            $params["fuzai_contact"]        = $_REQUEST["fuzai_contact"];
+            $params["tanto_nm"]             = $_REQUEST["tanto_nm"];
+            $params["comment"]              = $_REQUEST["comment"] ?? "";
+            $params["update_id"]            = $_SESSION["user_id"];
+
+            $sth = $dbh->prepare($sql);
+            $sth->execute($params);
+
+            $icnt = $sth->rowCount();
+
+            if ($icnt == 0) throw new Exception("得意先更新に失敗しました。");
+
+            //UPDATE OKURISAKI
+            $sql = "UPDATE m_okurisaki SET
+                        okurisaki_nm = :okurisaki_nm
+                        , okurisaki_kana = :okurisaki_kana
+                        , okurisaki_zip = :okurisaki_zip
+                        , okurisaki_adr_1 = :okurisaki_adr_1
+                        , okurisaki_adr_2 = :okurisaki_adr_2
+                        , okurisaki_adr_3 = :okurisaki_adr_3
+                        , okurisaki_tel = :okurisaki_tel
+                        , okurisaki_fax = :okurisaki_fax
+                        , tanto_nm = :tanto_nm
+                        , fuzai_contact = :fuzai_contact
+                        , delivery_instruct = :delivery_instruct
+                        , update_user_id = :update_id
+                        , update_date = CURRENT_TIMESTAMP
+                        WHERE tokuisaki_cd = :tokuisaki_cd
+                        AND okurisaki_cd = :okurisaki_cd";
+
+            $params = array();
+            $params["tokuisaki_cd"]         = $_REQUEST["tokuisaki_cd"];
+            $params["okurisaki_cd"]         = sprintf("%010d", 1);
+            $params["okurisaki_nm"]         = $_REQUEST["tokuisaki_nm"];
+            $params["okurisaki_kana"]       = $_REQUEST["tokuisaki_kana"];
+            $params["okurisaki_zip"]        = $_REQUEST["tokuisaki_zip"];
+            $params["okurisaki_adr_1"]      = $_REQUEST["tokuisaki_adr_1"];
+            $params["okurisaki_adr_2"]      = $_REQUEST["tokuisaki_adr_2"];
+            $params["okurisaki_adr_3"]      = $_REQUEST["tokuisaki_adr_3"];
+            $params["okurisaki_tel"]        = $_REQUEST["tokuisaki_tel"];
+            $params["okurisaki_fax"]        = $_REQUEST["tokuisaki_fax"];
+            $params["tanto_nm"]             = $_REQUEST["tanto_nm"];
+            $params["fuzai_contact"]        = $_REQUEST["fuzai_contact"];
+            $params["delivery_instruct"]    = $_REQUEST["tokuisaki_delivery_instruct"];
+            $params["update_id"]            = $_SESSION["user_id"];
+
+            $sth = $dbh->prepare($sql);
+            $sth->execute($params);
+
+            $icnt = $sth->rowCount();
+
+            if ($icnt == 0) throw new Exception("送り先更新に失敗しました。");
+
+            $dbh->commit();
+            echo json_encode("OK", JSON_UNESCAPED_UNICODE);
             break;
 
             /** 得意先更新 **/
@@ -882,135 +1228,31 @@ try {
                 if ($zip == "") throw new Exception($_REQUEST["tokuisaki_zip"] . "がヤマト郵便番号対応仕分マスタに存在しません。");
             };
 
-            if (isset($_REQUEST["sale_reg"]) && $_REQUEST["sale_reg"] === "1") {
-                //TOKUISAKI TEL DELETE        
-                $delete_sql = "DELETE FROM m_tokuisaki_tel 
-                                WHERE tokuisaki_cd = :tokuisaki_cd
-                                AND tel_no = :tel_no;";
-                //AND tel_no = :tel_no
-                $delete_sth = $dbh->prepare($delete_sql);
+            //TOKUISAKI TEL DELETE        
+            $sql = "DELETE FROM m_tokuisaki_tel WHERE tokuisaki_cd = :tokuisaki_cd;";
+            $sth = $dbh->prepare($sql);
+            $params = array();
+            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+            $sth->execute($params);
 
-                $params = array();
-                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                // $delete_sth->execute($params);
-                //tel
-                if ($_REQUEST["tokuisaki_tel"] != "") {
-                    $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
-                    $delete_sth->execute($params);
+            //PHONE CHECK
+            $rows = json_decode($_REQUEST["tel_rows"], true);
+            if (count($rows) == 0 || $_REQUEST["tel_rows"] == "") throw new Exception("追加電話番号を入力してください。");
 
-                    $params["tel_no"] = substr($_REQUEST["tokuisaki_tel"], -4);
-                    $delete_sth->execute($params);
-                }
-                //fax
-                if ($_REQUEST["tokuisaki_fax"] != "") {
-                    $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                    $delete_sth->execute($params);
-                }
-                //fuzai
-                if ($_REQUEST["fuzai_contact"] != "") {
-                    $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                    $delete_sth->execute($params);
-                }
+            $chk_sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no";
+            $chk_sth = $dbh->prepare($chk_sql);
+            $params = array();
 
-                //PHONE CHECK
-                $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no;";
-                // $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no IN (";
-                $params = array();
-                $tel = $_REQUEST["tokuisaki_tel"];
-                $params["tel_no"] = $tel;
-                // $sql .= "'$tel'";
-
-                // $lst4dig = substr($_REQUEST["tokuisaki_tel"], -4);
-                // // $sql .= ", '$lst4dig'";
-
-                // if ($_REQUEST["tokuisaki_fax"] != "") {
-                //     $fax = $_REQUEST["tokuisaki_fax"];
-                //     $sql .= ", '$fax'";
-                // };
-
-                // if ($_REQUEST["fuzai_contact"] != "") {
-                //     $fuzai = $_REQUEST["fuzai_contact"];
-                //     $sql .= ", '$fuzai'";
-                // };
-                // $sql .= ")";
-                $sth = $dbh->prepare($sql);
-                $sth->execute($params);
-                $cnt = $sth->fetchColumn();
-
-                //if ($cnt != 0) throw new Exception("代表電話、FAX番号、予備連絡先のいずれかはすでに別の得意先に登録されています。");
+            for ($i = 0; $i < count($rows); $i++) {
+                $tel = $rows[$i]["tel"];
+                $params["tel_no"] = $rows[$i]["tel"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
                 if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
+            }
 
-                //TOKUISAKI TEL INSERT
-                $sql = "INSERT INTO m_tokuisaki_tel(
-                tokuisaki_cd
-                ,tel_no
-                , entry_date
-                , update_date
-                )VALUES(
-                :tokuisaki_cd
-                ,:tel_no
-                , CURRENT_TIMESTAMP
-                , CURRENT_TIMESTAMP)";
-
-                $sth = $dbh->prepare($sql);
-
-                $params = array();
-                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                // $params["user_id"] = $_SESSION["user_id"];
-                $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
-                $sth->execute($params);
-
-                //LAST 4 DIGITS
-                // $params["tel_no"] = substr($_REQUEST["tokuisaki_tel"], -4);
-                // if ($params["tel_no"] !== $_REQUEST["tokuisaki_tel"]) {
-                //     $sth->execute($params);
-                // }
-
-                // if (
-                //     $_REQUEST["tokuisaki_fax"] !== "" &&
-                //     $_REQUEST["tokuisaki_fax"] !== $_REQUEST["tokuisaki_tel"] &&
-                //     $_REQUEST["tokuisaki_fax"] !== $_REQUEST["fuzai_contact"]
-                // ) {
-
-                //     $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                //     $sth->execute($params);
-                // }
-
-                // if (
-                //     $_REQUEST["fuzai_contact"] !== "" &&
-                //     $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_tel"] &&
-                //     $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_fax"]
-                // ) {
-
-                //     $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                //     $sth->execute($params);
-                // }
-            } else {
-                //TOKUISAKI TEL DELETE        
-                $sql = "DELETE FROM m_tokuisaki_tel WHERE tokuisaki_cd = :tokuisaki_cd;";
-                $sth = $dbh->prepare($sql);
-                $params = array();
-                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                $sth->execute($params);
-
-                //PHONE CHECK
-                $rows = json_decode($_REQUEST["tel_rows"], true);
-                if (count($rows) == 0 || $_REQUEST["tel_rows"] == "") throw new Exception("追加電話番号を入力してください。");
-
-                $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no";
-                $sth = $dbh->prepare(($sql));
-                $params = array();
-
-                for ($i = 0; $i < count($rows); $i++) {
-                    $tel = $rows[$i]["tel"];
-                    $params["tel_no"] = $rows[$i]["tel"];
-                    $sth->execute($params);
-                    $cnt = $sth->fetchColumn();
-                    if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
-                }
-
-                //TOKUISAKI TEL INSERT
-                $sql = "INSERT INTO m_tokuisaki_tel(
+            //TOKUISAKI TEL INSERT
+            $sql = "INSERT INTO m_tokuisaki_tel(
                             tokuisaki_cd
                             ,tel_no
                             ,update_date
@@ -1019,25 +1261,62 @@ try {
                             ,:tel_no
                             ,CURRENT_TIMESTAMP)";
 
-                $sth = $dbh->prepare($sql);
+            $insert_sth = $dbh->prepare($sql);
 
-                $check_sql = "SELECT COUNT(*) FROM m_tokuisaki_tel
+            $check_sql = "SELECT COUNT(*) FROM m_tokuisaki_tel
                             WHERE tokuisaki_cd = :tokuisaki_cd
                             AND tel_no = :tel_no;";
-                $check_sth = $dbh->prepare($check_sql);
+            $check_sth = $dbh->prepare($check_sql);
 
+            $params = array();
+            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+            for ($i = 0; $i < count($rows); $i++) {
+                $params["tel_no"] = $rows[$i]["tel"];
+                $check_sth->execute($params);
+                $cnt = $check_sth->fetchColumn();
+
+                if ($cnt === 0) {
+                    $insert_sth->execute($params);
+                }
+            };
+
+            if ($_REQUEST["tokuisaki_fax"] !== "") {
                 $params = array();
-                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                for ($i = 0; $i < count($rows); $i++) {
-                    $params["tel_no"] = $rows[$i]["tel"];
-                    $check_sth->execute($params);
-                    $cnt = $check_sth->fetchColumn();
+                $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $params = array();
+                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+                    $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                    $insert_sth->execute($params);
+                }
+            };
 
-                    if ($cnt === 0) {
-                        $sth->execute($params);
-                    }
-                };
-            }
+            if ($_REQUEST["fuzai_contact"] !== "") {
+                $params = array();
+                $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $params = array();
+                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+                    $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                    $insert_sth->execute($params);
+                }
+            };
+
+            /**
+             * LOGGER
+             */
+            //select tokuisaki
+            $sql = "SELECT sale_kbn FROM m_tokuisaki WHERE tokuisaki_cd = :tokuisaki_cd;";
+            $params = array();
+            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+            $sth = $dbh->prepare($sql);
+            $sth->execute($params);
+            $saleKbnBefore = $sth->fetch(PDO::FETCH_ASSOC);
+            tokuisakiUpdateLog("[$current_date] [tokuisaki_cd : " . $_REQUEST["tokuisaki_cd"] . "] [売上区分前 : " . $saleKbnBefore["sale_kbn"] . "] [売上区分後 : " . $_REQUEST["sales_kbn"] . "] [更新者 : " . $_SESSION["user_id"] . "]");
 
             //UPDATE TOKUISAKI
             $sql = "UPDATE m_tokuisaki SET 
@@ -1069,31 +1348,31 @@ try {
                 WHERE tokuisaki_cd = :tokuisaki_cd";
 
             $params = array();
-            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            $params["tokuisaki_nm"] = $_REQUEST["tokuisaki_nm"];
-            $params["tokuisaki_kana"] = $_REQUEST["tokuisaki_kana"];
-            $params["tokuisaki_zip"] = $_REQUEST["tokuisaki_zip"];
-            $params["tokuisaki_adr_1"] = $_REQUEST["tokuisaki_adr_1"];
-            $params["tokuisaki_adr_2"] = $_REQUEST["tokuisaki_adr_2"];
-            $params["tokuisaki_adr_3"] = $_REQUEST["tokuisaki_adr_3"];
-            $params["tokuisaki_tel"] = $_REQUEST["tokuisaki_tel"];
-            $params["tokuisaki_fax"] = $_REQUEST["tokuisaki_fax"];
-            $params["delivery_instruct"] = $_REQUEST["tokuisaki_delivery_instruct"];
-            $params["industry_cd"] = $_REQUEST["industry_cd"] ?? "1";
-            $params["fuzai_contact"] = $_REQUEST["fuzai_contact"];
-            $params["tanto_nm"] = $_REQUEST["tanto_nm"];
-            $params["bill_dt"] = $_REQUEST["bill_dt"] ?? "";
-            $params["order_print_kbn"] = $_REQUEST["order_print_kbn"] ?? "1";
-            $params["delivery_time_kbn"] = $_REQUEST["delivery_time_kbn"] ?? "1";
-            $params["delivery_time_hr"] = $_REQUEST["delivery_time_hr"] ?? "";
-            $params["delivery_time_min"] = $_REQUEST["delivery_time_min"] ?? "";
-            $params["delivery_instruct_kbn"] = $_REQUEST["delivery_instruct_kbn"] ?? "1";
-            $params["delivery_kbn"] = $_REQUEST["delivery_kbn"] ?? "1";
-            $params["yamato_kbn"] = $_REQUEST["yamato_kbn"] ?? "0";
-            $params["sale_kbn"] = $_REQUEST["sales_kbn"] ?? "1";
-            $params["comment"] = $_REQUEST["comment"] ?? "";
-            $params["update_id"] = $_SESSION["user_id"];
-            $params["search_flg"] = $_REQUEST["search_flg"] ?? "1";
+            $params["tokuisaki_cd"]             = $_REQUEST["tokuisaki_cd"];
+            $params["tokuisaki_nm"]             = $_REQUEST["tokuisaki_nm"];
+            $params["tokuisaki_kana"]           = $_REQUEST["tokuisaki_kana"];
+            $params["tokuisaki_zip"]            = $_REQUEST["tokuisaki_zip"];
+            $params["tokuisaki_adr_1"]          = $_REQUEST["tokuisaki_adr_1"];
+            $params["tokuisaki_adr_2"]          = $_REQUEST["tokuisaki_adr_2"];
+            $params["tokuisaki_adr_3"]          = $_REQUEST["tokuisaki_adr_3"];
+            $params["tokuisaki_tel"]            = $_REQUEST["tokuisaki_tel"];
+            $params["tokuisaki_fax"]            = $_REQUEST["tokuisaki_fax"];
+            $params["delivery_instruct"]        = $_REQUEST["tokuisaki_delivery_instruct"];
+            $params["industry_cd"]              = $_REQUEST["industry_cd"] ?? "1";
+            $params["fuzai_contact"]            = $_REQUEST["fuzai_contact"];
+            $params["tanto_nm"]                 = $_REQUEST["tanto_nm"];
+            $params["bill_dt"]                  = $_REQUEST["bill_dt"] ?? "";
+            $params["order_print_kbn"]          = $_REQUEST["order_print_kbn"] ?? "1";
+            $params["delivery_time_kbn"]        = $_REQUEST["delivery_time_kbn"] ?? "1";
+            $params["delivery_time_hr"]         = $_REQUEST["delivery_time_hr"] ?? "";
+            $params["delivery_time_min"]        = $_REQUEST["delivery_time_min"] ?? "";
+            $params["delivery_instruct_kbn"]    = $_REQUEST["delivery_instruct_kbn"] ?? "1";
+            $params["delivery_kbn"]             = $_REQUEST["delivery_kbn"] ?? "1";
+            $params["yamato_kbn"]               = $_REQUEST["yamato_kbn"] ?? "0";
+            $params["sale_kbn"]                 = $_REQUEST["sales_kbn"] ?? "1";
+            $params["comment"]                  = $_REQUEST["comment"] ?? "";
+            $params["update_id"]                = $_SESSION["user_id"];
+            $params["search_flg"]               = $_REQUEST["search_flg"] ?? "1";
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -1121,20 +1400,20 @@ try {
                     AND okurisaki_cd = :okurisaki_cd";
 
             $params = array();
-            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            $params["okurisaki_cd"] = sprintf("%010d", 1);
-            $params["okurisaki_nm"] = $_REQUEST["tokuisaki_nm"];
-            $params["okurisaki_kana"] = $_REQUEST["tokuisaki_kana"];
-            $params["okurisaki_zip"] = $_REQUEST["tokuisaki_zip"];
-            $params["okurisaki_adr_1"] = $_REQUEST["tokuisaki_adr_1"];
-            $params["okurisaki_adr_2"] = $_REQUEST["tokuisaki_adr_2"];
-            $params["okurisaki_adr_3"] = $_REQUEST["tokuisaki_adr_3"];
-            $params["okurisaki_tel"] = $_REQUEST["tokuisaki_tel"];
-            $params["okurisaki_fax"] = $_REQUEST["tokuisaki_fax"];
-            $params["tanto_nm"] = $_REQUEST["tanto_nm"];
-            $params["fuzai_contact"] = $_REQUEST["fuzai_contact"];
-            $params["delivery_instruct"] = $_REQUEST["tokuisaki_delivery_instruct"];
-            $params["update_id"] = $_SESSION["user_id"];
+            $params["tokuisaki_cd"]         = $_REQUEST["tokuisaki_cd"];
+            $params["okurisaki_cd"]         = sprintf("%010d", 1);
+            $params["okurisaki_nm"]         = $_REQUEST["tokuisaki_nm"];
+            $params["okurisaki_kana"]       = $_REQUEST["tokuisaki_kana"];
+            $params["okurisaki_zip"]        = $_REQUEST["tokuisaki_zip"];
+            $params["okurisaki_adr_1"]      = $_REQUEST["tokuisaki_adr_1"];
+            $params["okurisaki_adr_2"]      = $_REQUEST["tokuisaki_adr_2"];
+            $params["okurisaki_adr_3"]      = $_REQUEST["tokuisaki_adr_3"];
+            $params["okurisaki_tel"]        = $_REQUEST["tokuisaki_tel"];
+            $params["okurisaki_fax"]        = $_REQUEST["tokuisaki_fax"];
+            $params["tanto_nm"]             = $_REQUEST["tanto_nm"];
+            $params["fuzai_contact"]        = $_REQUEST["fuzai_contact"];
+            $params["delivery_instruct"]    = $_REQUEST["tokuisaki_delivery_instruct"];
+            $params["update_id"]            = $_SESSION["user_id"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -1294,20 +1573,20 @@ try {
                     , CURRENT_TIMESTAMP)";
 
             $params = array();
-            $params["tokuisaki_cd"] = $_REQUEST["okurisaki_tokuisaki_cd"];
-            $params["okurisaki_cd"] = $okurisaki_cd;
-            $params["okurisaki_nm"] = $_REQUEST["okurisaki_nm"];
-            $params["okurisaki_kana"] = $_REQUEST["okurisaki_kana"];
-            $params["okurisaki_zip"] = $_REQUEST["okurisaki_zip"];
-            $params["okurisaki_adr_1"] = $_REQUEST["okurisaki_adr_1"];
-            $params["okurisaki_adr_2"] = $_REQUEST["okurisaki_adr_2"];
-            $params["okurisaki_adr_3"] = $_REQUEST["okurisaki_adr_3"];
-            $params["okurisaki_tel"] = $_REQUEST["okurisaki_tel"];
-            $params["okurisaki_fax"] = $_REQUEST["okurisaki_fax"];
-            $params["tanto_nm"] = $_REQUEST["okurisaki_tanto_nm"];
-            $params["fuzai_contact"] = $_REQUEST["okurisaki_fuzai_contact"];
-            $params["delivery_instruct"] = $_REQUEST["okurisaki_delivery_instruct"];
-            $params["user_id"] = $_SESSION["user_id"];
+            $params["tokuisaki_cd"]         = $_REQUEST["okurisaki_tokuisaki_cd"];
+            $params["okurisaki_cd"]         = $okurisaki_cd;
+            $params["okurisaki_nm"]         = $_REQUEST["okurisaki_nm"];
+            $params["okurisaki_kana"]       = $_REQUEST["okurisaki_kana"];
+            $params["okurisaki_zip"]        = $_REQUEST["okurisaki_zip"];
+            $params["okurisaki_adr_1"]      = $_REQUEST["okurisaki_adr_1"];
+            $params["okurisaki_adr_2"]      = $_REQUEST["okurisaki_adr_2"];
+            $params["okurisaki_adr_3"]      = $_REQUEST["okurisaki_adr_3"];
+            $params["okurisaki_tel"]        = $_REQUEST["okurisaki_tel"];
+            $params["okurisaki_fax"]        = $_REQUEST["okurisaki_fax"];
+            $params["tanto_nm"]             = $_REQUEST["okurisaki_tanto_nm"];
+            $params["fuzai_contact"]        = $_REQUEST["okurisaki_fuzai_contact"];
+            $params["delivery_instruct"]    = $_REQUEST["okurisaki_delivery_instruct"];
+            $params["user_id"]              = $_SESSION["user_id"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -1342,20 +1621,20 @@ try {
              AND okurisaki_cd = :okurisaki_cd";
 
             $params = array();
-            $params["tokuisaki_cd"] = $_REQUEST["okurisaki_tokuisaki_cd"];
-            $params["okurisaki_cd"] = $_REQUEST["okurisaki_cd"] == "" ? sprintf("%010d", 1) : $_REQUEST["okurisaki_cd"];
-            $params["okurisaki_nm"] = $_REQUEST["okurisaki_nm"];
-            $params["okurisaki_kana"] = $_REQUEST["okurisaki_kana"];
-            $params["okurisaki_zip"] = $_REQUEST["okurisaki_zip"];
-            $params["okurisaki_adr_1"] = $_REQUEST["okurisaki_adr_1"];
-            $params["okurisaki_adr_2"] = $_REQUEST["okurisaki_adr_2"];
-            $params["okurisaki_adr_3"] = $_REQUEST["okurisaki_adr_3"];
-            $params["okurisaki_tel"] = $_REQUEST["okurisaki_tel"];
-            $params["okurisaki_fax"] = $_REQUEST["okurisaki_fax"];
-            $params["tanto_nm"] = $_REQUEST["okurisaki_tanto_nm"];
-            $params["fuzai_contact"] = $_REQUEST["okurisaki_fuzai_contact"];
-            $params["delivery_instruct"] = $_REQUEST["okurisaki_delivery_instruct"];
-            $params["update_id"] = $_SESSION["user_id"];
+            $params["tokuisaki_cd"]         = $_REQUEST["okurisaki_tokuisaki_cd"];
+            $params["okurisaki_cd"]         = $_REQUEST["okurisaki_cd"] == "" ? sprintf("%010d", 1) : $_REQUEST["okurisaki_cd"];
+            $params["okurisaki_nm"]         = $_REQUEST["okurisaki_nm"];
+            $params["okurisaki_kana"]       = $_REQUEST["okurisaki_kana"];
+            $params["okurisaki_zip"]        = $_REQUEST["okurisaki_zip"];
+            $params["okurisaki_adr_1"]      = $_REQUEST["okurisaki_adr_1"];
+            $params["okurisaki_adr_2"]      = $_REQUEST["okurisaki_adr_2"];
+            $params["okurisaki_adr_3"]      = $_REQUEST["okurisaki_adr_3"];
+            $params["okurisaki_tel"]        = $_REQUEST["okurisaki_tel"];
+            $params["okurisaki_fax"]        = $_REQUEST["okurisaki_fax"];
+            $params["tanto_nm"]             = $_REQUEST["okurisaki_tanto_nm"];
+            $params["fuzai_contact"]        = $_REQUEST["okurisaki_fuzai_contact"];
+            $params["delivery_instruct"]    = $_REQUEST["okurisaki_delivery_instruct"];
+            $params["update_id"]            = $_SESSION["user_id"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -1366,6 +1645,24 @@ try {
 
             $dbh->commit();
             echo json_encode("OK", JSON_UNESCAPED_UNICODE);
+            break;
+
+        case "okurisakiDelete":
+            if (!isset($_REQUEST["okurisaki_tokuisaki_cd"]) || $_REQUEST["okurisaki_tokuisaki_cd"] == "") throw new Exception("得意先を選択してください。");
+
+            $sql = "DELETE FROM m_okurisaki 
+                    WHERE tokuisaki_cd = :tokuisaki_cd
+                    AND okurisaki_cd = :okurisaki_cd;";
+
+            $params = array();
+            $params["tokuisaki_cd"] = $_REQUEST["okurisaki_tokuisaki_cd"];
+            $params["okurisaki_cd"] = $_REQUEST["okurisaki_cd"];
+
+            $sth = $dbh->prepare($sql);
+            $sth->execute($params);
+            $dbh->commit();
+            echo json_encode("OK", JSON_UNESCAPED_UNICODE);
+
             break;
 
         case "getOkurisakiById":
@@ -1718,19 +2015,19 @@ try {
                                 , CURRENT_TIMESTAMP)";
 
             $params = array();
-            $params["product_cd"] = $_REQUEST["product_cd"];
-            $params["product_nm"] = $_REQUEST["product_nm"];
-            $params["product_nm_abrv"] = $_REQUEST["product_nm_abrv"];
-            $params["product_type"] = $_REQUEST["product_type"];
-            $params["sale_tani"] = $_REQUEST["sale_tani"];
-            $params["label_disp_kbn"] = $_REQUEST["label_disp_kbn"];
-            $params["order_disp_kbn"] = $_REQUEST["order_disp_kbn"];
-            $params["haiban_kbn"] = $_REQUEST["haiban_kbn"];
-            $params["tax_kbn"] = $_REQUEST["tax_kbn"];
-            $params["sale_kbn"] = $_REQUEST["sale_kbn"];
-            $params["sale_price"] = $_REQUEST["sale_price"];
-            $params["unit_price"] = $_REQUEST["unit_price"];
-            $params["user_id"] = $_SESSION["user_id"];
+            $params["product_cd"]       = $_REQUEST["product_cd"];
+            $params["product_nm"]       = $_REQUEST["product_nm"];
+            $params["product_nm_abrv"]  = $_REQUEST["product_nm_abrv"];
+            $params["product_type"]     = $_REQUEST["product_type"];
+            $params["sale_tani"]        = $_REQUEST["sale_tani"];
+            $params["label_disp_kbn"]   = $_REQUEST["label_disp_kbn"];
+            $params["order_disp_kbn"]   = $_REQUEST["order_disp_kbn"];
+            $params["haiban_kbn"]       = $_REQUEST["haiban_kbn"];
+            $params["tax_kbn"]          = $_REQUEST["tax_kbn"];
+            $params["sale_kbn"]         = $_REQUEST["sale_kbn"];
+            $params["sale_price"]       = $_REQUEST["sale_price"];
+            $params["unit_price"]       = $_REQUEST["unit_price"];
+            $params["user_id"]          = $_SESSION["user_id"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -1783,19 +2080,19 @@ try {
 
             $params = array();
             //$params["product_cd"] = $_REQUEST["product_cd"];
-            $params["product_nm"] = $_REQUEST["product_nm"];
-            $params["product_nm_abrv"] = $_REQUEST["product_nm_abrv"];
-            $params["product_type"] = $_REQUEST["product_type"];
-            $params["sale_tani"] = $_REQUEST["sale_tani"];
-            $params["label_disp_kbn"] = $_REQUEST["label_disp_kbn"];
-            $params["order_disp_kbn"] = $_REQUEST["order_disp_kbn"];
-            $params["haiban_kbn"] = $_REQUEST["haiban_kbn"];
-            $params["tax_kbn"] = $_REQUEST["tax_kbn"];
-            $params["sale_kbn"] = $_REQUEST["sale_kbn"];
-            $params["sale_price"] = $_REQUEST["sale_price"];
-            $params["unit_price"] = $_REQUEST["unit_price"];
-            $params["user_id"] = $_SESSION["user_id"];
-            $params["prev_code"] = $_REQUEST["prev_code"];
+            $params["product_nm"]       = $_REQUEST["product_nm"];
+            $params["product_nm_abrv"]  = $_REQUEST["product_nm_abrv"];
+            $params["product_type"]     = $_REQUEST["product_type"];
+            $params["sale_tani"]        = $_REQUEST["sale_tani"];
+            $params["label_disp_kbn"]   = $_REQUEST["label_disp_kbn"];
+            $params["order_disp_kbn"]   = $_REQUEST["order_disp_kbn"];
+            $params["haiban_kbn"]       = $_REQUEST["haiban_kbn"];
+            $params["tax_kbn"]          = $_REQUEST["tax_kbn"];
+            $params["sale_kbn"]         = $_REQUEST["sale_kbn"];
+            $params["sale_price"]       = ($_REQUEST["sale_price"] == "") ? 0 : $_REQUEST["sale_price"];
+            $params["unit_price"]       = ($_REQUEST["unit_price"] == "") ? 0 : $_REQUEST["unit_price"];
+            $params["user_id"]          = $_SESSION["user_id"];
+            $params["prev_code"]        = $_REQUEST["prev_code"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -2120,11 +2417,11 @@ try {
                     , CURRENT_TIMESTAMP)";
 
             $params = array();
-            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            $params["product_cd"] = $_REQUEST["product_cd"];
-            $params["sale_price"] = $_REQUEST["sale_price"];
-            $params["unit_price"] = $_REQUEST["unit_price"];
-            $params["user_id"] = $_SESSION["user_id"];
+            $params["tokuisaki_cd"]     = $_REQUEST["tokuisaki_cd"];
+            $params["product_cd"]       = $_REQUEST["product_cd"];
+            $params["sale_price"]       = ($_REQUEST["sale_price"] == "") ? 0 : $_REQUEST["sale_price"];
+            $params["unit_price"]       = ($_REQUEST["unit_price"] == "") ? 0 : $_REQUEST["unit_price"];
+            $params["user_id"]          = $_SESSION["user_id"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -2150,11 +2447,11 @@ try {
                     AND product_cd = :product_cd;";
 
             $params = array();
-            $params["sale_price"] = $_REQUEST["sale_price"];
-            $params["unit_price"] = $_REQUEST["unit_price"];
-            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            $params["product_cd"] = $_REQUEST["product_cd"];
-            $params["user_id"] = $_SESSION["user_id"];
+            $params["sale_price"]       = ($_REQUEST["sale_price"] == "") ? 0 : $_REQUEST["sale_price"];
+            $params["unit_price"]       = ($_REQUEST["unit_price"] == "") ? 0 : $_REQUEST["unit_price"];
+            $params["tokuisaki_cd"]     = $_REQUEST["tokuisaki_cd"];
+            $params["product_cd"]       = $_REQUEST["product_cd"];
+            $params["user_id"]          = $_SESSION["user_id"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -2182,7 +2479,7 @@ try {
 
             $params = array();
             $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            $params["product_cd"] = $_REQUEST["product_cd"];
+            $params["product_cd"]   = $_REQUEST["product_cd"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -2283,7 +2580,7 @@ try {
             $file = fopen($_FILES["file"]["tmp_name"], "r");
             $data = fgetcsv($file);
 
-            $sth_check = $dbh->prepare($check_sql);
+            $sth_check  = $dbh->prepare($check_sql);
             $sth_insert = $dbh->prepare($insert_sql);
             $sth_update = $dbh->prepare($update_sql);
 
@@ -2311,10 +2608,10 @@ try {
 
                     //SET PARAMS
                     $params = array();
-                    $params["zip"] = $data[0];
-                    $params["ken_fu"] = $data[1];
-                    $params["shi_ku"] = $data[2];
-                    $params["machi"] = $data[3];
+                    $params["zip"]      = $data[0];
+                    $params["ken_fu"]   = $data[1];
+                    $params["shi_ku"]   = $data[2];
+                    $params["machi"]    = $data[3];
 
                     //UPDATE
                     if ($cnt > 0) {
@@ -2358,8 +2655,6 @@ try {
             session_start();
             $_SESSION['created'] = time();
             $file = null;
-            $type = pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION);
-            $type = strtolower($type);
             $files = null;
 
             //ERROR CHECK
@@ -2367,11 +2662,88 @@ try {
 
             if ($_FILES["file"]["error"] != 0) throw new Exception(fileErrorCheck($_FILES["file"]["error"]));
 
+            $type = pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION);
+            $type = strtolower($type);
+
             if ($type != "dat" && $type != "lzh") throw new Exception("不正なファイルタイプです。");
 
-            //GET LATEST UPDATE DATE
-            $sql = "SELECT COALESCE(MAX(create_dt),'0') AS create_dt FROM m_yamato;";
-            $get_sth = $dbh->prepare($sql);
+            //SET FILE PATH
+            $filepath       = $_FILES["file"]["tmp_name"];
+            $extractDir     = YAMATO_PENDING_FOLDER;
+            $fileToExtract  = strtolower(YAMATO_UPLOAD_FILE);
+            $extracted      = false;
+
+            //LZH FILE
+            if ($type === "lzh") {
+                if (!isset($_REQUEST["upload_dt"]) || empty($_REQUEST["upload_dt"])) throw new Exception("日時指定を選択してください。");
+
+                // Get the date input value from the form
+                $inputDate = $_REQUEST["upload_dt"];
+
+                // Convert input date string to a DateTime object
+                $inputDateTime = new DateTime($inputDate);
+
+                // Get the current date as a DateTime object
+                $currentDateTime = new DateTime();
+                if ($inputDateTime <= $currentDateTime) throw new Exception("日時指定は翌日以降を指定してください。");
+
+                //Get all files in directory
+                $files = scandir(YAMATO_PENDING_FOLDER);
+                $fileNames = array_diff($files, array('.', '..'));
+
+                //Delete all files from folder regardless
+                foreach ($fileNames as $fileName) {
+                    $path = YAMATO_PENDING_FOLDER . "/" . $fileName;
+                    unlink($path);
+                };
+
+                //Command to open lzh file
+                $command = "lha -x {$filepath} -w {$extractDir}";
+
+                // Execute the command
+                exec($command, $output, $returnCode);
+
+                if ($returnCode !== 0) throw new Exception("ヤマトのLZH アーカイブ内のファイルを取得できませんでした。");
+
+                //Get all files in directory
+                $files = scandir(YAMATO_PENDING_FOLDER);
+                $fileNames = array_diff($files, array('.', '..'));
+
+                // Output the file names
+                foreach ($fileNames as $fileName) {
+                    $filepath = YAMATO_PENDING_FOLDER . "/" . $fileName;
+                    if (strtolower($fileName) === $fileToExtract) {
+                        $extracted = true;
+                        break;
+                    };
+                };
+
+                //If no file extracted
+                if (!$extracted) throw new Exception("ヤマトのLZH アーカイブ内に必要なファイルが見つかりませんでした。");
+
+                // Write the new content to the file
+                $result = file_put_contents(YAMATO_PENDING_TIME_FOLDER . "/" . YAMATO_PENDING_TIME_FILE, $_REQUEST["upload_dt"]);
+
+                echo json_encode("ヤマトのLZH ファイルはアップロードされました。\n取込日時：" . $_REQUEST["upload_dt"], JSON_UNESCAPED_UNICODE);
+                return;
+            };
+
+            //DAT FILE
+            $basename = pathinfo($_FILES["file"]["name"], PATHINFO_BASENAME);
+            $basename = strtolower($basename);
+
+            if ($basename !== $fileToExtract) throw new Exception("ヤマトのDAT 取込ファイルは正しくありません。");
+
+            //Get first row
+            $row = file_get_contents($filepath);
+
+            //Check if file is empty
+            if ($row == "") throw new Exception("ヤマトのDAT 取込ファイルは空です。");
+
+            //Open file
+            $fp = fopen($filepath, "r");
+
+            if (!$fp) throw new Exception("ヤマトのDAT 取込ファイルが開けませんでした。");
 
             //DELETE SQL
             $sql = "DELETE FROM m_yamato;";
@@ -2379,230 +2751,98 @@ try {
 
             //INSERT SQL
             $sql = "INSERT INTO m_yamato(
-                    record_kbn
-                    , key_part
-                    , delivery_cd
-                    , mail_cd
-                    , start_dt
-                    , kubun
-                    , yobi
-                    , create_dt
-                    )VALUES(
-                    :record_kbn
-                    , :key_part
-                    , :delivery_cd
-                    , :mail_cd
-                    , :start_dt
-                    , :kubun
-                    , :yobi
-                    , :create_dt)";
+                     record_kbn
+                     , key_part
+                     , delivery_cd
+                     , mail_cd
+                     , start_dt
+                     , kubun
+                     , yobi
+                     , create_dt
+                     )VALUES(
+                     :record_kbn
+                     , :key_part
+                     , :delivery_cd
+                     , :mail_cd
+                     , :start_dt
+                     , :kubun
+                     , :yobi
+                     , :create_dt)";
             $insert_sth = $dbh->prepare($sql);
 
-            //SET FILE PATH
-            $filepath = $_FILES["file"]["tmp_name"];
-            $extractDir = YAMATO_PENDING_FOLDER;
-            $fileToExtract = strtolower(YAMATO_UPLOAD_FILE);
+            //GET LATEST UPDATE DATE
+            $sql = "SELECT COALESCE(MAX(create_dt),'0') AS create_dt FROM m_yamato;";
+            $get_sth = $dbh->prepare($sql);
+            $get_sth->execute();
+            $dt = $get_sth->fetchColumn();
 
-            for ($i = 0; $i <= YAMATO_UPLOAD_RETRY; $i++) {
+            $err_cnt = 0;
+            $line = 0;
+            $err_ary = array();
+            $data_ary = array();
+
+            //CHECK FILE
+            while (($data = fgets($fp)) !== FALSE) {
                 try {
-                    $err_cnt = 0;
-                    $line = 0;
-                    $err_ary = array();
-                    $data_ary = array();
-                    $extracted = false;
-                    $errMsg = "";
-                    $errDetail = "";
-                    $err = false;
-
-                    //EXTRACT FILE FROM LZH
-                    if ($type == "lzh") {
-
-                        //Command to open lzh file
-                        $command = "lha -x {$filepath} -w {$extractDir}";
-
-                        // Execute the command
-                        exec($command, $output, $returnCode);
-
-                        if ($returnCode !== 0) {
-                            $errMsg = "ヤマトのLZH アーカイブ内のファイルを取得できませんでした。";
-                            $err = true;
-                            continue;
-                        };
-
-                        $files = scandir(YAMATO_PENDING_FOLDER);
-                        // Remove the current directory (".") and parent directory ("..") from the list
-                        $fileNames = array_diff($files, array('.', '..'));
-
-                        // Output the file names
-                        foreach ($fileNames as $fileName) {
-                            $filepath = YAMATO_PENDING_FOLDER . "/" . $fileName;
-                            if (strtolower($fileName) === $fileToExtract) {
-                                $extracted = true;
-                                break;
-                            };
-                        }
-
-                        //If no file extracted
-                        if (!$extracted) {
-                            $errMsg = "ヤマトのLZH アーカイブ内に必要なファイルが見つかりませんでした。";
-                            $err = true;
-                            continue;
-                        };
+                    $line++;
+                    if (substr($data, 0, 3) == "\xef\xbb\xbf") { // check for BOM
+                        $data = substr($data, 3); // remove BOM
                     };
 
-                    //Get first row
-                    $row = file_get_contents($filepath);
+                    if (strlen(str_replace(array("\n", "\r\n", "\r"), '', $data)) != 50) throw new Exception("行の長さが正しくありません。] [行の長さ：" . strlen(str_replace(array("\n", "\r\n", "\r"), '', $data)));
 
-                    //Check if file is empty
-                    if ($row == "") {
-                        $errMsg = "取込ファイルは空です。";
-                        $err = true;
-                        continue;
-                    }
+                    if (substr($data, 42, 8) < $dt) throw new Exception("ヤマト郵便番号対応仕分マスタの作成日時が新しくありません。] [作成日時：$dt");
 
-                    //Open file
-                    $fp = fopen($filepath, "r");
-
-                    //Get latest update date
-                    $get_sth->execute();
-                    $dt = $get_sth->fetchColumn();
-
-                    //CHECK FILE
-                    while (($data = fgets($fp)) !== FALSE) {
-                        try {
-                            $line++;
-                            if (substr($data, 0, 3) == "\xef\xbb\xbf") { // check for BOM
-                                $data = substr($data, 3); // remove BOM
-                            };
-
-                            if (strlen(str_replace(array("\n", "\r\n", "\r"), '', $data)) != 50) throw new Exception("行の長さが正しくありません。] [行の長さ：" . strlen(str_replace(array("\n", "\r\n", "\r"), '', $data)));
-
-                            if (substr($data, 42, 8) < $dt) throw new Exception("ヤマト郵便番号対応仕分マスタの作成日時が新しくありません。] [作成日時：$dt");
-
-                            array_push($data_ary, $data);
-                        } catch (Exception $e) {
-                            $err_cnt++;
-                            $err_ary[] = '[ファイル名：' . $_FILES["file"]["name"] . '] [行目：' . $line . '] [エラー：' . $e->getMessage() . ']';
-                        }
-                    };
-
-                    fclose($fp);
-
-                    //If error create file
-                    if ($err_cnt != 0) {
-                        $errMsg = "取込ファイルのレイアウトは正しくありません。";
-                        $err = true;
-                        continue;
-                    }
-
-                    //If no data
-                    if (count($data_ary) == 0) {
-                        $errMsg = "ヤマト郵便番号対応仕分マスタに取り込むﾃﾞｰﾀがありません。";
-                        $err = true;
-                        continue;
-                    }
-
-                    //Delete current
-                    $delete_sth->execute();
-
-                    //Insert for loop
-                    foreach ($data_ary as $obj) {
-                        //レコード区分 => substr($data,0,1)
-                        //キー部 => substr($data,1,11)
-                        //仕分コード（宅急便用） => substr($data,12,7)
-                        //仕分コード（メール便用） => substr($data,19,7)
-                        //適用開始年月日 => substr($data,26,8)
-                        //区分 => substr($data,34,2)
-                        //予備 => substr($data,36,6)
-                        //作成年月日 => substr($data,42,8)
-
-                        //SET PARAMS
-                        $params = array();
-                        $params["record_kbn"] = substr($obj, 0, 1);
-                        $params["key_part"] = str_replace(" ", "", substr($obj, 1, 11));
-                        $params["delivery_cd"] = substr($obj, 12, 7);
-                        $params["mail_cd"] = substr($obj, 19, 7);
-                        $params["start_dt"] = substr($obj, 26, 8);
-                        $params["kubun"] = substr($obj, 34, 2);
-                        $params["yobi"] = substr($obj, 36, 6);
-                        $params["create_dt"] = substr($obj, 42, 8);
-
-                        $insert_sth->execute($params);
-                    }
-
-                    break;
+                    array_push($data_ary, $data);
                 } catch (Exception $e) {
-                    error_log($e->getMessage());
-                    $errDetail = $e->getMessage();
-                    $err = true;
-                    continue;
-                } finally {
-                    //Delete all files from folder regardless
-                    if ($type == "lzh") {
-                        $files = scandir(YAMATO_PENDING_FOLDER);
-                        $fileNames = array_diff($files, array('.', '..'));
-                        foreach ($fileNames as $fileName) {
-                            $filepath = YAMATO_PENDING_FOLDER . "/" . $fileName;
-                            unlink($filepath);
-                        };
-                    }
+                    $err_cnt++;
+                    $err_ary[] = '[ファイル名：' . $_FILES["file"]["name"] . '] [行目：' . $line . '] [エラー：' . $e->getMessage() . ']';
                 }
-            }
+            };
 
-            if ($err) {
-                //If error create file
-                if ($err_cnt != 0) {
-                    $file = TEMP_FOLDER . date("Ymdhis") . "_" . YAMATO_UPLOAD_ERROR_FILE;
-                    Create_Error_File($file, $err_ary);
-                    header('Content-Type: text/csv', false);
-                    header("Content-Disposition: attachment; filename=yamato_upload_error.csv");
-                    header('Content-Length: ' . filesize($file));
-                    readfile($file);
-                    //return;
-                };
+            fclose($fp);
 
-                //email
-                $sql = "SELECT mail FROM m_mail;";
-                $sth = $dbh->prepare($sql);
-                $sth->execute();
-                $mail_address = $sth->fetchAll(PDO::FETCH_ASSOC);
+            //If error create file
+            if ($err_cnt != 0) {
+                $file = TEMP_FOLDER . date("Ymdhis") . "_" . YAMATO_UPLOAD_ERROR_FILE;
+                Create_Error_File($file, $err_ary);
+                header('Content-Type: text/csv', false);
+                header("Content-Disposition: attachment; filename=yamato_upload_error.csv");
+                header('Content-Length: ' . filesize($file));
+                readfile($file);
+                return;
+            };
 
-                $sql = "SELECT 
-                            (SELECT kanri_cd FROM m_code WHERE kanri_key = 'mail.host') AS mail_host,
-                            (SELECT kanri_cd FROM m_code WHERE kanri_key = 'mail.port') AS mail_port,
-                            (SELECT kanri_cd FROM m_code WHERE kanri_key = 'mail.user') AS mail_user,
-                            (SELECT kanri_cd FROM m_code WHERE kanri_key = 'mail.pwd') AS mail_pwd,
-                            (SELECT kanri_cd FROM m_code WHERE kanri_key = 'mail.address') AS mail_address,
-                            (SELECT kanri_cd FROM m_code WHERE kanri_key = 'mail.from') AS mail_from;";
-                $sth = $dbh->prepare($sql);
-                $sth->execute();
-                $send_info = $sth->fetch(PDO::FETCH_ASSOC);
+            //Delete current
+            $delete_sth->execute();
 
-                $mail_host = $send_info["mail_host"];
-                $mail_port = $send_info["mail_port"];
-                $mail_uname = $send_info["mail_user"];
-                $mail_pwd = $send_info["mail_pwd"];
-                $mail_from = $send_info["mail_from"];
-                $title = "受注管理システム　出荷予定データヤマト仕分取込エラー";
-                $body = $errMsg . PHP_EOL . $errDetail;
+            //Insert for loop
+            foreach ($data_ary as $obj) {
+                //レコード区分 => substr($data,0,1)
+                //キー部 => substr($data,1,11)
+                //仕分コード（宅急便用） => substr($data,12,7)
+                //仕分コード（メール便用） => substr($data,19,7)
+                //適用開始年月日 => substr($data,26,8)
+                //区分 => substr($data,34,2)
+                //予備 => substr($data,36,6)
+                //作成年月日 => substr($data,42,8)
 
-                if (!empty($mail_host) && !empty($mail_port) && !empty($mail_uname) && !empty($mail_pwd) && !empty($mail_from)) {
-                    SendMail($mail_host, $mail_from, $mail_uname, $mail_pwd, $mail_port, $mail_address, $title, $body, $file);
-                } else {
-                    error_log("メールを送信するための情報はありません。");
-                }
+                //SET PARAMS
+                $params = array();
+                $params["record_kbn"]   = substr($obj, 0, 1);
+                $params["key_part"]     = str_replace(" ", "", substr($obj, 1, 11));
+                $params["delivery_cd"]  = substr($obj, 12, 7);
+                $params["mail_cd"]      = substr($obj, 19, 7);
+                $params["start_dt"]     = substr($obj, 26, 8);
+                $params["kubun"]        = substr($obj, 34, 2);
+                $params["yobi"]         = substr($obj, 36, 6);
+                $params["create_dt"]    = substr($obj, 42, 8);
 
-                //Delete CSV error file
-                if (!empty($file)) {
-                    unlink($file);
-                } else {
-                    throw new Exception($errMsg);
-                }
-            } else {
-                $dbh->commit();
-                echo json_encode("ヤマト仕分け取込を完了しました。", JSON_UNESCAPED_UNICODE);
-            }
+                $insert_sth->execute($params);
+            };
 
+            $dbh->commit();
+            echo json_encode("ヤマト仕分取込は完了しました。", JSON_UNESCAPED_UNICODE);
             break;
 
             /** 売上登録 **/
@@ -2620,7 +2860,7 @@ try {
             if (count($rows) == 0 || $_REQUEST["mesai_rows"] == "") throw new Exception("売上明細を入力してください。");
 
             // && $_REQUEST["sales_kbn"] == "1"
-            //便種はヤマトの場合
+            //便種はヤマトの場合 [1]
             if (isset($_REQUEST["delivery_kbn"]) && $_REQUEST["delivery_kbn"] == "1") {
 
                 //郵便番号を確認
@@ -2639,30 +2879,61 @@ try {
 
                 //YAMATO INQUIRE NO
                 //ヤマト問い合わせ番号
-                $sql = "SELECT 
-                            (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.inquire.start') AS yamato_inquire_start,
-                            (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.inquire.end') AS yamato_inquire_end,
-                            (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.inquire.current') AS yamato_inquire_current";
-                $sth = $dbh->prepare($sql);
-                $sth->execute();
-                $list = $sth->fetch();
-                $inquire_no = $list["yamato_inquire_current"];
+                if ($_REQUEST["sales_kbn"] == 1) {
+                    $sql = "SELECT 
+                        (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.inquire.start') AS yamato_inquire_start,
+                        (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.inquire.end') AS yamato_inquire_end,
+                        (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.inquire.current') AS yamato_inquire_current";
 
-                //UPDATE YAMATO INQUIRE NO
-                //ヤマトの問い合わせ番号を更新
-                // +1
-                $sql = "UPDATE m_code
+                    $sth = $dbh->prepare($sql);
+                    $sth->execute();
+                    $list = $sth->fetch();
+                    $inquire_no = $list["yamato_inquire_current"];
+
+                    //UPDATE YAMATO INQUIRE NO
+                    //ヤマトの問い合わせ番号を更新
+                    // +1
+                    $sql = "UPDATE m_code
+                            SET kanri_cd = :yamato_current,
+                            update_date = CURRENT_TIMESTAMP
+                            WHERE kanri_key = 'yamato.inquire.current';";
+
+                    $param = array();
+                    if ($inquire_no + 1 > $list["yamato_inquire_end"]) {
+                        $param["yamato_current"] = $list["yamato_inquire_start"];
+                    } else {
+                        $param["yamato_current"] = $inquire_no + 1;
+                    }
+                    $sth = $dbh->prepare($sql);
+                    $sth->execute($param);
+                } else {
+                    $sql = "SELECT 
+                    (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.motobarai.start') AS yamato_motobarai_start,
+                    (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.motobarai.end') AS yamato_motobarai_end,
+                    (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.motobarai.current') AS yamato_motobarai_current";
+
+                    $sth = $dbh->prepare($sql);
+                    $sth->execute();
+                    $list = $sth->fetch();
+                    $inquire_no = $list["yamato_motobarai_current"];
+
+                    //UPDATE YAMATO INQUIRE NO
+                    //ヤマトの問い合わせ番号を更新
+                    // +1
+                    $sql = "UPDATE m_code
                         SET kanri_cd = :yamato_current,
                         update_date = CURRENT_TIMESTAMP
-                        WHERE kanri_key = 'yamato.inquire.current';";
-                $param = array();
-                if ($inquire_no + 1 > $list["yamato_inquire_end"]) {
-                    $param["yamato_current"] = $list["yamato_inquire_start"];
-                } else {
-                    $param["yamato_current"] = $inquire_no + 1;
+                        WHERE kanri_key = 'yamato.motobarai.current';";
+
+                    $param = array();
+                    if ($inquire_no + 1 > $list["yamato_motobarai_end"]) {
+                        $param["yamato_current"] = $list["yamato_motobarai_start"];
+                    } else {
+                        $param["yamato_current"] = $inquire_no + 1;
+                    }
+                    $sth = $dbh->prepare($sql);
+                    $sth->execute($param);
                 }
-                $sth = $dbh->prepare($sql);
-                $sth->execute($param);
             };
 
             //TOKUISAKI TEL DELETE        
@@ -2695,32 +2966,16 @@ try {
             }
 
             //PHONE CHECK
-            //$sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no IN (";
             //新しい電話番号は存在するか確認
             $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no;";
             $params = array();
             $tel = $_REQUEST["tokuisaki_tel"];
             $params["tel_no"] = $tel;
-            //$sql .= "'$tel'";
 
-            //$lst4dig = substr($_REQUEST["tokuisaki_tel"], -4);
-            //$sql .= ", '$lst4dig'";
+            $chk_sth = $dbh->prepare($sql);
+            $chk_sth->execute($params);
+            $cnt = $chk_sth->fetchColumn();
 
-            // if ($_REQUEST["tokuisaki_fax"] != "") {
-            //     $fax = $_REQUEST["tokuisaki_fax"];
-            //     $sql .= ", '$fax'";
-            // };
-
-            // if ($_REQUEST["fuzai_contact"] != "") {
-            //     $fuzai = $_REQUEST["fuzai_contact"];
-            //     $sql .= ", '$fuzai'";
-            // };
-            // $sql .= ")";
-            $sth = $dbh->prepare($sql);
-            $sth->execute($params);
-            $cnt = $sth->fetchColumn();
-
-            // if ($cnt != 0) throw new Exception("代表電話、FAX番号、予備連絡先のいずれかはすでに別の得意先に登録されています。");
             if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
 
             //TOKUISAKI TEL INSERT
@@ -2736,39 +2991,38 @@ try {
                             ,CURRENT_TIMESTAMP
                             ,CURRENT_TIMESTAMP)";
 
-            $sth = $dbh->prepare($sql);
+            $insert_sth = $dbh->prepare($sql);
 
             $params = array();
             $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            // $params["user_id"] = $_SESSION["user_id"];
             $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
-            $sth->execute($params);
+            $insert_sth->execute($params);
 
-            //LAST 4 DIGITS
-            // $params["tel_no"] = substr($_REQUEST["tokuisaki_tel"], -4);
-            // if ($params["tel_no"] !== $_REQUEST["tokuisaki_tel"]) {
-            //     $sth->execute($params);
-            // }
+            if ($_REQUEST["tokuisaki_fax"] !== "") {
+                $params = array();
+                $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $params = array();
+                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+                    $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                    $insert_sth->execute($params);
+                }
+            };
 
-            // if (
-            //     $_REQUEST["tokuisaki_fax"] !== "" &&
-            //     $_REQUEST["tokuisaki_fax"] !== $_REQUEST["tokuisaki_tel"] &&
-            //     $_REQUEST["tokuisaki_fax"] !== $_REQUEST["fuzai_contact"]
-            // ) {
-
-            //     $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-            //     $sth->execute($params);
-            // }
-
-            // if (
-            //     $_REQUEST["fuzai_contact"] !== "" &&
-            //     $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_tel"] &&
-            //     $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_fax"]
-            // ) {
-
-            //     $params["tel_no"] = $_REQUEST["fuzai_contact"];
-            //     $sth->execute($params);
-            // }
+            if ($_REQUEST["fuzai_contact"] !== "") {
+                $params = array();
+                $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $params = array();
+                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+                    $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                    $insert_sth->execute($params);
+                }
+            };
 
             //TOKUISAKI UPDATE
             //得意先を更新
@@ -2799,30 +3053,30 @@ try {
                         WHERE tokuisaki_cd = :tokuisaki_cd";
 
             $params = array();
-            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            $params["tokuisaki_nm"] = $_REQUEST["tokuisaki_nm"];
-            $params["tokuisaki_kana"] = $_REQUEST["tokuisaki_kana"];
-            $params["tokuisaki_zip"] = $_REQUEST["tokuisaki_zip"];
-            $params["tokuisaki_adr_1"] = $_REQUEST["tokuisaki_adr_1"];
-            $params["tokuisaki_adr_2"] = $_REQUEST["tokuisaki_adr_2"];
-            $params["tokuisaki_adr_3"] = $_REQUEST["tokuisaki_adr_3"];
-            $params["tokuisaki_tel"] = $_REQUEST["tokuisaki_tel"];
-            $params["tokuisaki_fax"] = $_REQUEST["tokuisaki_fax"];
-            $params["delivery_instruct"] = $_REQUEST["tokuisaki_delivery_instruct"];
-            $params["industry_cd"] = isset($_REQUEST["industry_cd"]) ? $_REQUEST["industry_cd"] : "1";
-            $params["fuzai_contact"] = $_REQUEST["fuzai_contact"];
-            $params["tanto_nm"] = $_REQUEST["tanto_nm"];
-            $params["delivery_time_kbn"] = isset($_REQUEST["delivery_time_kbn"]) ? $_REQUEST["delivery_time_kbn"] : "3";
-            $params["delivery_time_hr"] = isset($_REQUEST["delivery_time_hr"]) ? $_REQUEST["delivery_time_hr"] : "";
-            $params["delivery_time_min"] = isset($_REQUEST["delivery_time_min"]) ? $_REQUEST["delivery_time_min"] : "";
-            $params["delivery_instruct_kbn"] = isset($_REQUEST["delivery_instruct_kbn"]) ? $_REQUEST["delivery_instruct_kbn"] : "3";
+            $params["tokuisaki_cd"]             = $_REQUEST["tokuisaki_cd"];
+            $params["tokuisaki_nm"]             = $_REQUEST["tokuisaki_nm"];
+            $params["tokuisaki_kana"]           = $_REQUEST["tokuisaki_kana"];
+            $params["tokuisaki_zip"]            = $_REQUEST["tokuisaki_zip"];
+            $params["tokuisaki_adr_1"]          = $_REQUEST["tokuisaki_adr_1"];
+            $params["tokuisaki_adr_2"]          = $_REQUEST["tokuisaki_adr_2"];
+            $params["tokuisaki_adr_3"]          = $_REQUEST["tokuisaki_adr_3"];
+            $params["tokuisaki_tel"]            = $_REQUEST["tokuisaki_tel"];
+            $params["tokuisaki_fax"]            = $_REQUEST["tokuisaki_fax"];
+            $params["delivery_instruct"]        = $_REQUEST["tokuisaki_delivery_instruct"];
+            $params["industry_cd"]              = isset($_REQUEST["industry_cd"]) ? $_REQUEST["industry_cd"] : "1";
+            $params["fuzai_contact"]            = $_REQUEST["fuzai_contact"];
+            $params["tanto_nm"]                 = $_REQUEST["tanto_nm"];
+            $params["delivery_time_kbn"]        = isset($_REQUEST["delivery_time_kbn"]) ? $_REQUEST["delivery_time_kbn"] : "3";
+            $params["delivery_time_hr"]         = isset($_REQUEST["delivery_time_hr"]) ? $_REQUEST["delivery_time_hr"] : "";
+            $params["delivery_time_min"]        = isset($_REQUEST["delivery_time_min"]) ? $_REQUEST["delivery_time_min"] : "";
+            $params["delivery_instruct_kbn"]    = isset($_REQUEST["delivery_instruct_kbn"]) ? $_REQUEST["delivery_instruct_kbn"] : "3";
             //$params["delivery_kbn"] = isset($_REQUEST["delivery_kbn"]) ? $_REQUEST["delivery_kbn"] : "1";
-            $params["yamato_kbn"] = isset($_REQUEST["yamato_kbn"]) ? $_REQUEST["yamato_kbn"] : "0";
-            $params["comment"] = $_REQUEST["comment"];
-            $params["update_id"] = $_SESSION["user_id"];
-            $params["jikai_kbn_1"] = $_REQUEST["next_kbn"];
-            $params["jikai_kbn_2"] = $_REQUEST["next_kbn2"];
-            $params["jikai_kbn_3"] = $_REQUEST["next_kbn3"];
+            $params["yamato_kbn"]               = isset($_REQUEST["yamato_kbn"]) ? $_REQUEST["yamato_kbn"] : "0";
+            $params["comment"]                  = $_REQUEST["comment"];
+            $params["update_id"]                = $_SESSION["user_id"];
+            $params["jikai_kbn_1"]              = $_REQUEST["next_kbn"];
+            $params["jikai_kbn_2"]              = $_REQUEST["next_kbn2"];
+            $params["jikai_kbn_3"]              = $_REQUEST["next_kbn3"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -2890,20 +3144,20 @@ try {
                     , CURRENT_TIMESTAMP)";
 
                 $params = array();
-                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                $params["okurisaki_cd"] = $okurisaki_cd;
-                $params["okurisaki_nm"] = $_REQUEST["okurisaki_nm"];
-                $params["okurisaki_kana"] = $_REQUEST["okurisaki_kana"];
-                $params["okurisaki_zip"] = $_REQUEST["okurisaki_zip"];
-                $params["okurisaki_adr_1"] = $_REQUEST["okurisaki_adr_1"];
-                $params["okurisaki_adr_2"] = $_REQUEST["okurisaki_adr_2"];
-                $params["okurisaki_adr_3"] = $_REQUEST["okurisaki_adr_3"];
-                $params["okurisaki_tel"] = $_REQUEST["okurisaki_tel"];
-                $params["okurisaki_fax"] = $_REQUEST["okurisaki_fax"];
-                $params["tanto_nm"] = $_REQUEST["okurisaki_tanto_nm"];
-                $params["fuzai_contact"] = $_REQUEST["okurisaki_fuzai_contact"];
-                $params["delivery_instruct"] = $_REQUEST["okurisaki_delivery_instruct"];
-                $params["user_id"] = $_SESSION["user_id"];
+                $params["tokuisaki_cd"]         = $_REQUEST["tokuisaki_cd"];
+                $params["okurisaki_cd"]         = $okurisaki_cd;
+                $params["okurisaki_nm"]         = $_REQUEST["okurisaki_nm"];
+                $params["okurisaki_kana"]       = $_REQUEST["okurisaki_kana"];
+                $params["okurisaki_zip"]        = $_REQUEST["okurisaki_zip"];
+                $params["okurisaki_adr_1"]      = $_REQUEST["okurisaki_adr_1"];
+                $params["okurisaki_adr_2"]      = $_REQUEST["okurisaki_adr_2"];
+                $params["okurisaki_adr_3"]      = $_REQUEST["okurisaki_adr_3"];
+                $params["okurisaki_tel"]        = $_REQUEST["okurisaki_tel"];
+                $params["okurisaki_fax"]        = $_REQUEST["okurisaki_fax"];
+                $params["tanto_nm"]             = $_REQUEST["okurisaki_tanto_nm"];
+                $params["fuzai_contact"]        = $_REQUEST["okurisaki_fuzai_contact"];
+                $params["delivery_instruct"]    = $_REQUEST["okurisaki_delivery_instruct"];
+                $params["user_id"]              = $_SESSION["user_id"];
 
                 $sth = $dbh->prepare($sql);
                 $sth->execute($params);
@@ -2929,20 +3183,20 @@ try {
                     AND okurisaki_cd = :okurisaki_cd;";
 
                 $params = array();
-                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                $params["okurisaki_cd"] = $_REQUEST["okurisaki_cd"]; // ?? sprintf("%010d", 1)
-                $params["okurisaki_nm"] = $_REQUEST["okurisaki_nm"] ?? $_REQUEST["tokuisaki_nm"];
-                $params["okurisaki_kana"] = $_REQUEST["okurisaki_kana"] ?? $_REQUEST["tokuisaki_kana"];
-                $params["okurisaki_zip"] = $_REQUEST["okurisaki_zip"] ?? $_REQUEST["tokuisaki_zip"];
-                $params["okurisaki_adr_1"] = $_REQUEST["okurisaki_adr_1"] ?? $_REQUEST["tokuisaki_adr_1"];
-                $params["okurisaki_adr_2"] = $_REQUEST["okurisaki_adr_2"] ?? $_REQUEST["tokuisaki_adr_2"];
-                $params["okurisaki_adr_3"] = $_REQUEST["okurisaki_adr_3"] ?? $_REQUEST["tokuisaki_adr_3"];
-                $params["okurisaki_tel"] = $_REQUEST["okurisaki_tel"] ?? $_REQUEST["tokuisaki_tel"];
-                $params["okurisaki_fax"] = $_REQUEST["okurisaki_fax"] ?? $_REQUEST["tokuisaki_fax"];
-                $params["tanto_nm"] = $_REQUEST["okurisaki_tanto_nm"] ?? $_REQUEST["tanto_nm"];
-                $params["fuzai_contact"] = $_REQUEST["okurisaki_fuzai_contact"] ?? $_REQUEST["fuzai_contact"];
-                $params["delivery_instruct"] = $_REQUEST["okurisaki_delivery_instruct"] ?? $_REQUEST["tokuisaki_delivery_instruct"];
-                $params["update_id"] = $_SESSION["user_id"];
+                $params["tokuisaki_cd"]         = $_REQUEST["tokuisaki_cd"];
+                $params["okurisaki_cd"]         = $_REQUEST["okurisaki_cd"]; // ?? sprintf("%010d", 1)
+                $params["okurisaki_nm"]         = $_REQUEST["okurisaki_nm"] ?? $_REQUEST["tokuisaki_nm"];
+                $params["okurisaki_kana"]       = $_REQUEST["okurisaki_kana"] ?? $_REQUEST["tokuisaki_kana"];
+                $params["okurisaki_zip"]        = $_REQUEST["okurisaki_zip"] ?? $_REQUEST["tokuisaki_zip"];
+                $params["okurisaki_adr_1"]      = $_REQUEST["okurisaki_adr_1"] ?? $_REQUEST["tokuisaki_adr_1"];
+                $params["okurisaki_adr_2"]      = $_REQUEST["okurisaki_adr_2"] ?? $_REQUEST["tokuisaki_adr_2"];
+                $params["okurisaki_adr_3"]      = $_REQUEST["okurisaki_adr_3"] ?? $_REQUEST["tokuisaki_adr_3"];
+                $params["okurisaki_tel"]        = $_REQUEST["okurisaki_tel"] ?? $_REQUEST["tokuisaki_tel"];
+                $params["okurisaki_fax"]        = $_REQUEST["okurisaki_fax"] ?? $_REQUEST["tokuisaki_fax"];
+                $params["tanto_nm"]             = $_REQUEST["okurisaki_tanto_nm"] ?? $_REQUEST["tanto_nm"];
+                $params["fuzai_contact"]        = $_REQUEST["okurisaki_fuzai_contact"] ?? $_REQUEST["fuzai_contact"];
+                $params["delivery_instruct"]    = $_REQUEST["okurisaki_delivery_instruct"] ?? $_REQUEST["tokuisaki_delivery_instruct"];
+                $params["update_id"]            = $_SESSION["user_id"];
 
                 $sth = $dbh->prepare($sql);
                 $sth->execute($params);
@@ -3013,29 +3267,30 @@ try {
             $sth = $dbh->prepare($sql);
 
             $params = array();
-            $params["order_no"] = $_REQUEST["order_no"];
-            $params["next_kbn"] = $_REQUEST["next_kbn"];
-            $params["sale_dt"] = $_REQUEST["sale_dt"]; // . " " . date("H:i:s");
-            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            $params["okurisaki_cd"] = (empty($_REQUEST["okurisaki_cd"])) ? $okurisaki_cd : $_REQUEST["okurisaki_cd"]; //(!isset($_REQUEST["okurisaki_cd"]) || $_REQUEST["okurisaki_cd"] == "") ? sprintf("%010d", 1) : $_REQUEST["okurisaki_cd"];
-            $params["order_kbn"] = $_REQUEST["order_kbn"];
-            $params["sale_kbn"] = $_REQUEST["sales_kbn"];
-            $params["delivery_kbn"] = $_REQUEST["delivery_kbn"];
-            $params["receive_dt"] = $_REQUEST["receive_dt"];
-            $params["delivery_time_kbn"] = ($_REQUEST["delivery_time_hr"] == "") ? "3" : $_REQUEST["delivery_time_kbn"];
-            $params["delivery_time_hr"] = $_REQUEST["delivery_time_hr"];
-            $params["delivery_time_min"] = $_REQUEST["delivery_time_min"];
-            $params["delivery_instruct_kbn"] = ($_REQUEST["delivery_time_hr"] == "") ? "3" : $_REQUEST["delivery_instruct_kbn"];
-            $params["total_qty"] = $_REQUEST["total_qty"];
-            $params["total_cost"] = $_REQUEST["total_cost"];
-            $params["tax_8"] = $_REQUEST["tax_8"];
-            $params["tax_10"] = $_REQUEST["tax_10"];
-            $params["grand_total"] = $_REQUEST["grand_total"];
-            $params["kosu"] = $_REQUEST["kosu"];
-            $params["sender_cd"] = $_REQUEST["sender_cd"];
-            $params["yamato_kbn"] = $_REQUEST["yamato_kbn"] ?? "0";
-            $params["user_id"] = $_SESSION["user_id"];
+            $params["order_no"]                 = $_REQUEST["order_no"];
+            $params["next_kbn"]                 = $_REQUEST["next_kbn"];
+            $params["sale_dt"]                  = $_REQUEST["sale_dt"]; // . " " . date("H:i:s");
+            $params["tokuisaki_cd"]             = $_REQUEST["tokuisaki_cd"];
+            $params["okurisaki_cd"]             = (empty($_REQUEST["okurisaki_cd"])) ? $okurisaki_cd : $_REQUEST["okurisaki_cd"]; //(!isset($_REQUEST["okurisaki_cd"]) || $_REQUEST["okurisaki_cd"] == "") ? sprintf("%010d", 1) : $_REQUEST["okurisaki_cd"];
+            $params["order_kbn"]                = $_REQUEST["order_kbn"];
+            $params["sale_kbn"]                 = $_REQUEST["sales_kbn"];
+            $params["delivery_kbn"]             = $_REQUEST["delivery_kbn"];
+            $params["receive_dt"]               = $_REQUEST["receive_dt"];
+            $params["delivery_time_kbn"]        = ($_REQUEST["delivery_time_hr"] == "") ? "3" : $_REQUEST["delivery_time_kbn"];
+            $params["delivery_time_hr"]         = $_REQUEST["delivery_time_hr"];
+            $params["delivery_time_min"]        = $_REQUEST["delivery_time_min"];
+            $params["delivery_instruct_kbn"]    = ($_REQUEST["delivery_time_hr"] == "") ? "3" : $_REQUEST["delivery_instruct_kbn"];
+            $params["total_qty"]                = $_REQUEST["total_qty"];
+            $params["total_cost"]               = $_REQUEST["total_cost"];
+            $params["tax_8"]                    = $_REQUEST["tax_8"];
+            $params["tax_10"]                   = $_REQUEST["tax_10"];
+            $params["grand_total"]              = $_REQUEST["grand_total"];
+            $params["kosu"]                     = $_REQUEST["kosu"];
+            $params["sender_cd"]                = $_REQUEST["sender_cd"];
+            $params["yamato_kbn"]               = $_REQUEST["yamato_kbn"] ?? "0";
+            $params["user_id"]                  = $_SESSION["user_id"];
             $sth->execute($params);
+            logSaleInsert($params, $inquire_no ? ($inquire_no . Create7DRCheckDigit($inquire_no)) : '');
 
             //MESAI ROWS
 
@@ -3122,18 +3377,19 @@ try {
                         , CURRENT_TIMESTAMP);";
 
             $params = array();
-            $params["denpyo_flg"] = '0';
-            $params["hikae_flg"] = $_REQUEST["hikae_flg"];
-            $params["receipt_flg"] = $_REQUEST["receipt_flg"];
+            $params["denpyo_flg"]   = '0';
+            $params["hikae_flg"]    = $_REQUEST["hikae_flg"];
+            $params["receipt_flg"]  = $_REQUEST["receipt_flg"];
+
             if ($_REQUEST["denpyo_flg"] == '1' || $_REQUEST["order_flg"] == '1') {
                 $params["order_flg"] = '1';
             } else {
                 $params["order_flg"] = '0';
             }
-            $params["label_flg"] = $_REQUEST["label_flg"];
-            $params["print_flg"] = '0';
-            $params["user_id"] = $_SESSION["user_id"];
-            $params["order_no"] = $_REQUEST["order_no"];
+            $params["label_flg"]    = $_REQUEST["label_flg"];
+            $params["print_flg"]    = '0';
+            $params["user_id"]      = $_SESSION["user_id"];
+            $params["order_no"]     = $_REQUEST["order_no"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -3146,8 +3402,8 @@ try {
                         WHERE order_no = :order_no;";
 
                 $params = array();
-                $params["order_no"] = $_REQUEST["order_no"];
-                $params["inquire_no"] = $inquire_no . Create7DRCheckDigit($inquire_no);
+                $params["order_no"]     = $_REQUEST["order_no"];
+                $params["inquire_no"]   = $inquire_no . Create7DRCheckDigit($inquire_no);
 
                 $sth = $dbh->prepare($sql);
                 $sth->execute($params);
@@ -3208,43 +3464,75 @@ try {
 
                 //YAMATO INQUIRE NO
                 //ヤマト問合せ番号を取得
-                $sql = "SELECT 
+                if ($_REQUEST["sales_kbn"] == 1) {
+                    $sql = "SELECT 
                             (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.inquire.start') AS yamato_inquire_start,
                             (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.inquire.end') AS yamato_inquire_end,
                             (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.inquire.current') AS yamato_inquire_current";
-                $sth = $dbh->prepare($sql);
-                $sth->execute();
-                $list = $sth->fetch();
+                    $sth = $dbh->prepare($sql);
+                    $sth->execute();
+                    $list = $sth->fetch();
 
-                //更新する前は佐川または、その他の便種の場合
-                //問い合わせ番号を更新
-                if (substr($_REQUEST["inquire_no"], 0, 4) != '3775') {
-                    $inquire_no = $list["yamato_inquire_current"];
+                    //更新する前は佐川または、その他の便種の場合
+                    //問い合わせ番号を更新
+                    if (substr($_REQUEST["inquire_no"], 0, 4) != '3775') {
+                        $inquire_no = $list["yamato_inquire_current"];
 
-                    //UPDATE YAMATO INQUIRE NO
-                    $sql = "UPDATE m_code
+                        //UPDATE YAMATO INQUIRE NO
+                        $sql = "UPDATE m_code
                             SET kanri_cd = :yamato_current,
                             update_date = CURRENT_TIMESTAMP
                             WHERE kanri_key = 'yamato.inquire.current'";
-                    $param = array();
-                    if ($inquire_no + 1 > $list["yamato_inquire_end"]) {
-                        $param["yamato_current"] = $list["yamato_inquire_start"];
-                    } else {
-                        $param["yamato_current"] = $inquire_no + 1;
-                    }
-                    $sth = $dbh->prepare($sql);
-                    $sth->execute($param);
+                        $param = array();
+                        if ($inquire_no + 1 > $list["yamato_inquire_end"]) {
+                            $param["yamato_current"] = $list["yamato_inquire_start"];
+                        } else {
+                            $param["yamato_current"] = $inquire_no + 1;
+                        }
+                        $sth = $dbh->prepare($sql);
+                        $sth->execute($param);
 
-                    $inquire_no = $list["yamato_inquire_current"] . Create7DRCheckDigit($list["yamato_inquire_current"]);
-                };
+                        $inquire_no = $list["yamato_inquire_current"] . Create7DRCheckDigit($list["yamato_inquire_current"]);
+                    };
+                } else {
+                    //元払い
+                    $sql = "SELECT 
+                    (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.motobarai.start') AS yamato_motobarai_start,
+                    (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.motobarai.end') AS yamato_motobarai_end,
+                    (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.motobarai.current') AS yamato_motobarai_current";
+
+                    $sth = $dbh->prepare($sql);
+                    $sth->execute();
+                    $list = $sth->fetch();
+
+                    if (substr($_REQUEST["inquire_no"], 0, 4) != '4845') {
+                        $inquire_no = $list["yamato_motobarai_current"];
+
+                        //UPDATE YAMATO INQUIRE NO
+                        $sql = "UPDATE m_code
+                            SET kanri_cd = :yamato_current,
+                            update_date = CURRENT_TIMESTAMP
+                            WHERE kanri_key = 'yamato.motobarai.current'";
+                        $param = array();
+                        if ($inquire_no + 1 > $list["yamato_motobarai_end"]) {
+                            $param["yamato_current"] = $list["yamato_motobarai_start"];
+                        } else {
+                            $param["yamato_current"] = $inquire_no + 1;
+                        }
+                        $sth = $dbh->prepare($sql);
+                        $sth->execute($param);
+
+                        $inquire_no = $list["yamato_motobarai_current"] . Create7DRCheckDigit($list["yamato_motobarai_current"]);
+                    };
+                }
             } else {
                 //佐川・その他の問い合わせ番号
-                //if (substr($_REQUEST["inquire_no"], 0, 4) == '3775') {
-                $sql = "SELECT lpad(CAST(nextval('seq_inquire_no') as character varying) , 12 , '0');";
-                $sth = $dbh->prepare($sql);
-                $sth->execute();
-                $inquire_no = $sth->fetchColumn();
-                //}
+                if (substr($_REQUEST["inquire_no"], 0, 4) == '3775' || substr($_REQUEST["inquire_no"], 0, 4) == '4845') {
+                    $sql = "SELECT lpad(CAST(nextval('seq_inquire_no') as character varying) , 12 , '0');";
+                    $sth = $dbh->prepare($sql);
+                    $sth->execute();
+                    $inquire_no = $sth->fetchColumn();
+                }
             }
 
             //TOKUISAKI TEL DELETE        
@@ -3276,30 +3564,15 @@ try {
             }
 
             //PHONE CHECK
-            //$sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no IN (";
             //得意先電話番号は存在するか
             $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no;";
             $tel = $_REQUEST["tokuisaki_tel"];
             $params = array();
             $params["tel_no"] = $tel;
-            //$sql .= "'$tel'";
 
-            //            $lst4dig = substr($_REQUEST["tokuisaki_tel"], -4);
-            //          $sql .= ", '$lst4dig'";
-
-            // if ($_REQUEST["tokuisaki_fax"] != "") {
-            //     $fax = $_REQUEST["tokuisaki_fax"];
-            //     $sql .= ", '$fax'";
-            // };
-
-            // if ($_REQUEST["fuzai_contact"] != "") {
-            //     $fuzai = $_REQUEST["fuzai_contact"];
-            //     $sql .= ", '$fuzai'";
-            // };
-            // $sql .= ")";
-            $sth = $dbh->prepare($sql);
-            $sth->execute($params);
-            $cnt = $sth->fetchColumn();
+            $chk_sth = $dbh->prepare($sql);
+            $chk_sth->execute($params);
+            $cnt = $chk_sth->fetchColumn();
 
             // if ($cnt != 0) throw new Exception("代表電話、FAX番号、予備連絡先のいずれかはすでに別の得意先に登録されています。");
             if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
@@ -3317,39 +3590,38 @@ try {
                             , CURRENT_TIMESTAMP
                             , CURRENT_TIMESTAMP)";
 
-            $sth = $dbh->prepare($sql);
+            $insert_sth = $dbh->prepare($sql);
 
             $params = array();
             $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            // $params["user_id"] = $_SESSION["user_id"];
             $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
-            $sth->execute($params);
+            $insert_sth->execute($params);
 
-            //LAST 4 DIGITS
-            //        $params["tel_no"] = substr($_REQUEST["tokuisaki_tel"], -4);
-            //      if ($params["tel_no"] !== $_REQUEST["tokuisaki_tel"]) {
-            //        $sth->execute($params);
-            //  }
+            if ($_REQUEST["tokuisaki_fax"] !== "") {
+                $params = array();
+                $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $params = array();
+                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+                    $params["tel_no"]       = $_REQUEST["tokuisaki_fax"];
+                    $insert_sth->execute($params);
+                }
+            };
 
-            // if (
-            //     $_REQUEST["tokuisaki_fax"] !== "" &&
-            //     $_REQUEST["tokuisaki_fax"] !== $_REQUEST["tokuisaki_tel"] &&
-            //     $_REQUEST["tokuisaki_fax"] !== $_REQUEST["fuzai_contact"]
-            // ) {
-
-            //     $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-            //     $sth->execute($params);
-            // }
-
-            // if (
-            //     $_REQUEST["fuzai_contact"] !== "" &&
-            //     $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_tel"] &&
-            //     $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_fax"]
-            // ) {
-
-            //     $params["tel_no"] = $_REQUEST["fuzai_contact"];
-            //     $sth->execute($params);
-            // }
+            if ($_REQUEST["fuzai_contact"] !== "") {
+                $params = array();
+                $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                $chk_sth->execute($params);
+                $cnt = $chk_sth->fetchColumn();
+                if ($cnt === 0) {
+                    $params = array();
+                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+                    $params["tel_no"]       = $_REQUEST["fuzai_contact"];
+                    $insert_sth->execute($params);
+                }
+            };
 
             //TOKUISAKI UPDATE
             //得意先を更新
@@ -3380,29 +3652,29 @@ try {
                         WHERE tokuisaki_cd = :tokuisaki_cd";
 
             $params = array();
-            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            $params["tokuisaki_nm"] = $_REQUEST["tokuisaki_nm"];
-            $params["tokuisaki_kana"] = $_REQUEST["tokuisaki_kana"];
-            $params["tokuisaki_zip"] = $_REQUEST["tokuisaki_zip"];
-            $params["tokuisaki_adr_1"] = $_REQUEST["tokuisaki_adr_1"];
-            $params["tokuisaki_adr_2"] = $_REQUEST["tokuisaki_adr_2"];
-            $params["tokuisaki_adr_3"] = $_REQUEST["tokuisaki_adr_3"];
-            $params["tokuisaki_tel"] = $_REQUEST["tokuisaki_tel"];
-            $params["tokuisaki_fax"] = $_REQUEST["tokuisaki_fax"];
-            $params["delivery_instruct"] = $_REQUEST["tokuisaki_delivery_instruct"];
-            $params["industry_cd"] = isset($_REQUEST["industry_cd"]) ? $_REQUEST["industry_cd"] : "1";
-            $params["fuzai_contact"] = $_REQUEST["fuzai_contact"];
-            $params["tanto_nm"] = $_REQUEST["tanto_nm"];
-            $params["delivery_time_kbn"] = isset($_REQUEST["delivery_time_kbn"]) ? $_REQUEST["delivery_time_kbn"] : "3";
-            $params["delivery_time_hr"] = isset($_REQUEST["delivery_time_hr"]) ? $_REQUEST["delivery_time_hr"] : "";
-            $params["delivery_time_min"] = isset($_REQUEST["delivery_time_min"]) ? $_REQUEST["delivery_time_min"] : "";
-            $params["delivery_instruct_kbn"] = isset($_REQUEST["delivery_instruct_kbn"]) ? $_REQUEST["delivery_instruct_kbn"] : "3";
-            $params["yamato_kbn"] = isset($_REQUEST["yamato_kbn"]) ? $_REQUEST["yamato_kbn"] : "0";
-            $params["comment"] = $_REQUEST["comment"];
-            $params["update_id"] = $_SESSION["user_id"];
-            $params["jikai_kbn_1"] = $_REQUEST["next_kbn"];
-            $params["jikai_kbn_2"] = $_REQUEST["next_kbn2"];
-            $params["jikai_kbn_3"] = $_REQUEST["next_kbn3"];
+            $params["tokuisaki_cd"]             = $_REQUEST["tokuisaki_cd"];
+            $params["tokuisaki_nm"]             = $_REQUEST["tokuisaki_nm"];
+            $params["tokuisaki_kana"]           = $_REQUEST["tokuisaki_kana"];
+            $params["tokuisaki_zip"]            = $_REQUEST["tokuisaki_zip"];
+            $params["tokuisaki_adr_1"]          = $_REQUEST["tokuisaki_adr_1"];
+            $params["tokuisaki_adr_2"]          = $_REQUEST["tokuisaki_adr_2"];
+            $params["tokuisaki_adr_3"]          = $_REQUEST["tokuisaki_adr_3"];
+            $params["tokuisaki_tel"]            = $_REQUEST["tokuisaki_tel"];
+            $params["tokuisaki_fax"]            = $_REQUEST["tokuisaki_fax"];
+            $params["delivery_instruct"]        = $_REQUEST["tokuisaki_delivery_instruct"];
+            $params["industry_cd"]              = isset($_REQUEST["industry_cd"]) ? $_REQUEST["industry_cd"] : "1";
+            $params["fuzai_contact"]            = $_REQUEST["fuzai_contact"];
+            $params["tanto_nm"]                 = $_REQUEST["tanto_nm"];
+            $params["delivery_time_kbn"]        = isset($_REQUEST["delivery_time_kbn"]) ? $_REQUEST["delivery_time_kbn"] : "3";
+            $params["delivery_time_hr"]         = isset($_REQUEST["delivery_time_hr"]) ? $_REQUEST["delivery_time_hr"] : "";
+            $params["delivery_time_min"]        = isset($_REQUEST["delivery_time_min"]) ? $_REQUEST["delivery_time_min"] : "";
+            $params["delivery_instruct_kbn"]    = isset($_REQUEST["delivery_instruct_kbn"]) ? $_REQUEST["delivery_instruct_kbn"] : "3";
+            $params["yamato_kbn"]               = isset($_REQUEST["yamato_kbn"]) ? $_REQUEST["yamato_kbn"] : "0";
+            $params["comment"]                  = $_REQUEST["comment"];
+            $params["update_id"]                = $_SESSION["user_id"];
+            $params["jikai_kbn_1"]              = $_REQUEST["next_kbn"];
+            $params["jikai_kbn_2"]              = $_REQUEST["next_kbn2"];
+            $params["jikai_kbn_3"]              = $_REQUEST["next_kbn3"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -3468,20 +3740,20 @@ try {
                     , CURRENT_TIMESTAMP)";
 
                 $params = array();
-                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                $params["okurisaki_cd"] = $okurisaki_cd;
-                $params["okurisaki_nm"] = $_REQUEST["okurisaki_nm"];
-                $params["okurisaki_kana"] = $_REQUEST["okurisaki_kana"];
-                $params["okurisaki_zip"] = $_REQUEST["okurisaki_zip"];
-                $params["okurisaki_adr_1"] = $_REQUEST["okurisaki_adr_1"];
-                $params["okurisaki_adr_2"] = $_REQUEST["okurisaki_adr_2"];
-                $params["okurisaki_adr_3"] = $_REQUEST["okurisaki_adr_3"];
-                $params["okurisaki_tel"] = $_REQUEST["okurisaki_tel"];
-                $params["okurisaki_fax"] = $_REQUEST["okurisaki_fax"];
-                $params["tanto_nm"] = $_REQUEST["okurisaki_tanto_nm"];
-                $params["fuzai_contact"] = $_REQUEST["okurisaki_fuzai_contact"];
-                $params["delivery_instruct"] = $_REQUEST["okurisaki_delivery_instruct"];
-                $params["user_id"] = $_SESSION["user_id"];
+                $params["tokuisaki_cd"]         = $_REQUEST["tokuisaki_cd"];
+                $params["okurisaki_cd"]         = $okurisaki_cd;
+                $params["okurisaki_nm"]         = $_REQUEST["okurisaki_nm"];
+                $params["okurisaki_kana"]       = $_REQUEST["okurisaki_kana"];
+                $params["okurisaki_zip"]        = $_REQUEST["okurisaki_zip"];
+                $params["okurisaki_adr_1"]      = $_REQUEST["okurisaki_adr_1"];
+                $params["okurisaki_adr_2"]      = $_REQUEST["okurisaki_adr_2"];
+                $params["okurisaki_adr_3"]      = $_REQUEST["okurisaki_adr_3"];
+                $params["okurisaki_tel"]        = $_REQUEST["okurisaki_tel"];
+                $params["okurisaki_fax"]        = $_REQUEST["okurisaki_fax"];
+                $params["tanto_nm"]             = $_REQUEST["okurisaki_tanto_nm"];
+                $params["fuzai_contact"]        = $_REQUEST["okurisaki_fuzai_contact"];
+                $params["delivery_instruct"]    = $_REQUEST["okurisaki_delivery_instruct"];
+                $params["user_id"]              = $_SESSION["user_id"];
 
                 $sth = $dbh->prepare($sql);
                 $sth->execute($params);
@@ -3506,20 +3778,20 @@ try {
                     AND okurisaki_cd = :okurisaki_cd";
 
                 $params = array();
-                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                $params["okurisaki_cd"] = $_REQUEST["okurisaki_cd"];
-                $params["okurisaki_nm"] = $_REQUEST["okurisaki_nm"] ?? $_REQUEST["tokuisaki_nm"];
-                $params["okurisaki_kana"] = $_REQUEST["okurisaki_kana"] ?? $_REQUEST["tokuisaki_kana"];
-                $params["okurisaki_zip"] = $_REQUEST["okurisaki_zip"] ?? $_REQUEST["tokuisaki_zip"];
-                $params["okurisaki_adr_1"] = $_REQUEST["okurisaki_adr_1"] ?? $_REQUEST["tokuisaki_adr_1"];
-                $params["okurisaki_adr_2"] = $_REQUEST["okurisaki_adr_2"] ?? $_REQUEST["tokuisaki_adr_2"];
-                $params["okurisaki_adr_3"] = $_REQUEST["okurisaki_adr_3"] ?? $_REQUEST["tokuisaki_adr_3"];
-                $params["okurisaki_tel"] = $_REQUEST["okurisaki_tel"] ?? $_REQUEST["tokuisaki_tel"];
-                $params["okurisaki_fax"] = $_REQUEST["okurisaki_fax"] ?? $_REQUEST["tokuisaki_fax"];
-                $params["tanto_nm"] = $_REQUEST["okurisaki_tanto_nm"] ?? $_REQUEST["tanto_nm"];
-                $params["fuzai_contact"] = $_REQUEST["okurisaki_fuzai_contact"] ?? $_REQUEST["fuzai_contact"];
-                $params["delivery_instruct"] = $_REQUEST["okurisaki_delivery_instruct"] ?? $_REQUEST["tokuisaki_delivery_instruct"];
-                $params["update_id"] = $_SESSION["user_id"];
+                $params["tokuisaki_cd"]         = $_REQUEST["tokuisaki_cd"];
+                $params["okurisaki_cd"]         = $_REQUEST["okurisaki_cd"];
+                $params["okurisaki_nm"]         = $_REQUEST["okurisaki_nm"] ?? $_REQUEST["tokuisaki_nm"];
+                $params["okurisaki_kana"]       = $_REQUEST["okurisaki_kana"] ?? $_REQUEST["tokuisaki_kana"];
+                $params["okurisaki_zip"]        = $_REQUEST["okurisaki_zip"] ?? $_REQUEST["tokuisaki_zip"];
+                $params["okurisaki_adr_1"]      = $_REQUEST["okurisaki_adr_1"] ?? $_REQUEST["tokuisaki_adr_1"];
+                $params["okurisaki_adr_2"]      = $_REQUEST["okurisaki_adr_2"] ?? $_REQUEST["tokuisaki_adr_2"];
+                $params["okurisaki_adr_3"]      = $_REQUEST["okurisaki_adr_3"] ?? $_REQUEST["tokuisaki_adr_3"];
+                $params["okurisaki_tel"]        = $_REQUEST["okurisaki_tel"] ?? $_REQUEST["tokuisaki_tel"];
+                $params["okurisaki_fax"]        = $_REQUEST["okurisaki_fax"] ?? $_REQUEST["tokuisaki_fax"];
+                $params["tanto_nm"]             = $_REQUEST["okurisaki_tanto_nm"] ?? $_REQUEST["tanto_nm"];
+                $params["fuzai_contact"]        = $_REQUEST["okurisaki_fuzai_contact"] ?? $_REQUEST["fuzai_contact"];
+                $params["delivery_instruct"]    = $_REQUEST["okurisaki_delivery_instruct"] ?? $_REQUEST["tokuisaki_delivery_instruct"];
+                $params["update_id"]            = $_SESSION["user_id"];
 
                 $sth = $dbh->prepare($sql);
                 $sth->execute($params);
@@ -3577,15 +3849,15 @@ try {
 
             $params = array();
             $params["order_no"] = $_REQUEST["order_no"];
-            $params["user_id"] = $_SESSION["user_id"];
+            $params["user_id"]  = $_SESSION["user_id"];
 
             for ($i = 0; $i < count($rows); $i++) {
-                $params["row_no"] = $rows[$i]["row_no"];
-                $params["product_cd"] = $rows[$i]["product_cd"];
-                $params["product_nm"] = $rows[$i]["product_nm"];
-                $params["tanka"] = $rows[$i]["tanka"];
-                $params["qty"] = $rows[$i]["qty"];
-                $params["total_cost"] = $rows[$i]["total_cost"];
+                $params["row_no"]       = $rows[$i]["row_no"];
+                $params["product_cd"]   = $rows[$i]["product_cd"];
+                $params["product_nm"]   = $rows[$i]["product_nm"];
+                $params["tanka"]        = $rows[$i]["tanka"];
+                $params["qty"]          = $rows[$i]["qty"];
+                $params["total_cost"]   = $rows[$i]["total_cost"];
 
                 $sth->execute($params);
             };
@@ -3628,31 +3900,31 @@ try {
             $sql .= " WHERE order_no = :order_no;";
             $sth = $dbh->prepare($sql);
 
-
-            $params["order_no"] = $_REQUEST["order_no"];
-            $params["next_kbn"] = $_REQUEST["next_kbn"];
-            $params["sale_dt"] = $_REQUEST["sale_dt"]; //. " " . date("H:i:s");
-            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-            $params["okurisaki_cd"] = (empty($_REQUEST["okurisaki_cd"])) ? $okurisaki_cd : $_REQUEST["okurisaki_cd"]; //($_REQUEST["okurisaki_cd"] == "") ? sprintf("%010d", 1) : $_REQUEST["okurisaki_cd"];
+            $params["order_no"]                 = $_REQUEST["order_no"];
+            $params["next_kbn"]                 = $_REQUEST["next_kbn"];
+            $params["sale_dt"]                  = $_REQUEST["sale_dt"]; //. " " . date("H:i:s");
+            $params["tokuisaki_cd"]             = $_REQUEST["tokuisaki_cd"];
+            $params["okurisaki_cd"]             = (empty($_REQUEST["okurisaki_cd"])) ? $okurisaki_cd : $_REQUEST["okurisaki_cd"]; //($_REQUEST["okurisaki_cd"] == "") ? sprintf("%010d", 1) : $_REQUEST["okurisaki_cd"];
             // $params["inquire_no"] = $_REQUEST["inquire_no"];
-            $params["order_kbn"] = $_REQUEST["order_kbn"];
-            $params["sale_kbn"] = $_REQUEST["sales_kbn"];
-            $params["delivery_kbn"] = $_REQUEST["delivery_kbn"];
-            $params["receive_dt"] = $_REQUEST["receive_dt"];
-            $params["delivery_time_kbn"] = ($_REQUEST["delivery_time_hr"] == "") ? "3" : $_REQUEST["delivery_time_kbn"];
-            $params["delivery_time_hr"] = $_REQUEST["delivery_time_hr"];
-            $params["delivery_time_min"] = $_REQUEST["delivery_time_min"];
-            $params["delivery_instruct_kbn"] = ($_REQUEST["delivery_time_hr"] == "") ? "3" : $_REQUEST["delivery_instruct_kbn"];
-            $params["total_qty"] = $_REQUEST["total_qty"];
-            $params["total_cost"] = $_REQUEST["total_cost"];
-            $params["tax_8"] = $_REQUEST["tax_8"];
-            $params["tax_10"] = $_REQUEST["tax_10"];
-            $params["grand_total"] = $_REQUEST["grand_total"];
-            $params["kosu"] = $_REQUEST["kosu"];
-            $params["sender_cd"] = $_REQUEST["sender_cd"];
-            $params["yamato_kbn"] = $_REQUEST["yamato_kbn"] ?? "0";
-            $params["user_id"] = $_SESSION["user_id"];
+            $params["order_kbn"]                = $_REQUEST["order_kbn"];
+            $params["sale_kbn"]                 = $_REQUEST["sales_kbn"];
+            $params["delivery_kbn"]             = $_REQUEST["delivery_kbn"];
+            $params["receive_dt"]               = $_REQUEST["receive_dt"];
+            $params["delivery_time_kbn"]        = ($_REQUEST["delivery_time_hr"] == "") ? "3" : $_REQUEST["delivery_time_kbn"];
+            $params["delivery_time_hr"]         = $_REQUEST["delivery_time_hr"];
+            $params["delivery_time_min"]        = $_REQUEST["delivery_time_min"];
+            $params["delivery_instruct_kbn"]    = ($_REQUEST["delivery_time_hr"] == "") ? "3" : $_REQUEST["delivery_instruct_kbn"];
+            $params["total_qty"]                = $_REQUEST["total_qty"];
+            $params["total_cost"]               = $_REQUEST["total_cost"];
+            $params["tax_8"]                    = $_REQUEST["tax_8"];
+            $params["tax_10"]                   = $_REQUEST["tax_10"];
+            $params["grand_total"]              = $_REQUEST["grand_total"];
+            $params["kosu"]                     = $_REQUEST["kosu"];
+            $params["sender_cd"]                = $_REQUEST["sender_cd"];
+            $params["yamato_kbn"]               = $_REQUEST["yamato_kbn"] ?? "0";
+            $params["user_id"]                  = $_SESSION["user_id"];
             $sth->execute($params);
+            logSaleUpdate($params, $inquire_no ?? '');
 
             //UPDATE AUTO REPORT PRINT TABLE
             //自動発行帳票を更新
@@ -3668,18 +3940,18 @@ try {
                         WHERE order_no = :order_no;";
 
             $params = array();
-            $params["denpyo_flg"] = '0';
-            $params["hikae_flg"] = $_REQUEST["hikae_flg"];
-            $params["receipt_flg"] = $_REQUEST["receipt_flg"];
+            $params["denpyo_flg"]   = '0';
+            $params["hikae_flg"]    = $_REQUEST["hikae_flg"];
+            $params["receipt_flg"]  = $_REQUEST["receipt_flg"];
             if ($_REQUEST["denpyo_flg"] == '1' || $_REQUEST["order_flg"] == '1') {
                 $params["order_flg"] = '1';
             } else {
                 $params["order_flg"] = '0';
             }
-            $params["label_flg"] = $_REQUEST["label_flg"];
-            $params["print_flg"] = '0';
-            $params["user_id"] = $_SESSION["user_id"];
-            $params["order_no"] = $_REQUEST["order_no"];
+            $params["label_flg"]    = $_REQUEST["label_flg"];
+            $params["print_flg"]    = '0';
+            $params["user_id"]      = $_SESSION["user_id"];
+            $params["order_no"]     = $_REQUEST["order_no"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -3708,12 +3980,15 @@ try {
             //ON DELETE WILL CASCADE DOWN TO t_sale_d
             $delete_sale_h = "DELETE FROM t_sale_h WHERE order_no = :order_no;";
             $delete_sale_d = "DELETE FROM t_sale_d WHERE order_no = :order_no;";
+            $delete_sale_report = "DELETE FROM t_sale_report WHERE order_no = :order_no;";
 
             $sth_h = $dbh->prepare($delete_sale_h);
             $sth_d = $dbh->prepare($delete_sale_d);
+            $sth_report = $dbh->prepare($delete_sale_report);
 
             $sth_h->execute($params);
             $sth_d->execute($params);
+            $sth_report->execute($params);
 
             $dbh->commit();
 
@@ -3987,8 +4262,8 @@ try {
                     AND TO_CHAR(sale_dt, 'YYYY-MM-DD') = :sale_dt;";
 
             $params = array();
-            $params["inquire_no"] = $_REQUEST["inquire_no"];
-            $params["sale_dt"] = $_REQUEST["sale_dt"];
+            $params["inquire_no"]   = $_REQUEST["inquire_no"];
+            $params["sale_dt"]      = $_REQUEST["sale_dt"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -4005,9 +4280,9 @@ try {
                     WHERE order_no = :order_no;";
 
             $params = array();
-            $params["inquire_no"] = $_REQUEST["inquire_no"];
-            $params["order_no"] = $_REQUEST["order_no"];
-            $params["user_id"] = $_SESSION["user_id"];
+            $params["inquire_no"]   = $_REQUEST["inquire_no"];
+            $params["order_no"]     = $_REQUEST["order_no"];
+            $params["user_id"]      = $_SESSION["user_id"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -4034,6 +4309,19 @@ try {
             AND tel_no LIKE :tel 
             ORDER BY tokuisaki_cd
             LIMIT 50 OFFSET $offset;";
+            // $sql = "SELECT tel.tokuisaki_cd as tokuisaki_cd, tel.tel_no as tel_no, t.tokuisaki_nm as tokuisaki_nm
+            // FROM m_tokuisaki_tel tel
+            // INNER JOIN m_tokuisaki t ON tel.tokuisaki_cd = t.tokuisaki_cd
+            // WHERE t.search_flg = '1' 
+            // AND tel_no LIKE :tel 
+            // UNION
+            // SELECT tokuisaki_cd as tokuisaki_cd, fuzai_contact as tel_no, tokuisaki_nm as tokuisaki_nm
+            // FROM m_tokuisaki
+            // WHERE search_flg = '1'
+            // AND fuzai_contact <> ''
+            // AND fuzai_contact LIKE :tel
+            // ORDER BY tokuisaki_cd
+            // LIMIT 50 OFFSET $offset;";
 
             $params = array();
             $params["tel"] = "%" . $_REQUEST["tel"] . "%";
@@ -4144,7 +4432,7 @@ try {
 
             $params = array();
             $params["new_password"] = password_hash($_REQUEST["new_password"], PASSWORD_BCRYPT, array('cost' => 12));
-            $params["user_id"] = $_SESSION["user_id"];
+            $params["user_id"]      = $_SESSION["user_id"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -4192,8 +4480,8 @@ try {
                         , update_date = CURRENT_TIMESTAMP;";
 
             $params = array();
-            $params["memo"] = urldecode($_REQUEST["memo"]);
-            $params["update_id"] = $_SESSION["user_id"];
+            $params["memo"]         = urldecode($_REQUEST["memo"]);
+            $params["update_id"]    = $_SESSION["user_id"];
             $sth = $dbh->prepare($update);
             $sth->execute($params);
             $icnt = $sth->rowCount();
@@ -4248,17 +4536,18 @@ try {
             $sth = $dbh->prepare($sql);
 
             $params = array();
-            $params["denpyo_flg"] = '0';
-            $params["hikae_flg"] = $_REQUEST["hikae_flg"];
-            $params["receipt_flg"] = $_REQUEST["receipt_flg"];
+            $params["denpyo_flg"]   = '0';
+            $params["hikae_flg"]    = $_REQUEST["hikae_flg"];
+            $params["receipt_flg"]  = $_REQUEST["receipt_flg"];
+
             if ($_REQUEST["denpyo_flg"] == '1' || $_REQUEST["order_flg"] == '1') {
                 $params["order_flg"] = '1';
             } else {
                 $params["order_flg"] = '0';
             }
-            $params["label_flg"] = $_REQUEST["label_flg"];
-            $params["print_flg"] = '0';
-            $params["user_id"] = $_SESSION["user_id"];
+            $params["label_flg"]    = $_REQUEST["label_flg"];
+            $params["print_flg"]    = '0';
+            $params["user_id"]      = $_SESSION["user_id"];
 
             for ($i = 0; $i < count($order_no); $i++) {
                 $params["order_no"] = $order_no[$i];
@@ -4540,11 +4829,11 @@ try {
                         AND delivery_kbn = '1';";
 
                 $params = array();
-                $params["shuka_dt"] = $_REQUEST["shuka_dt"];
-                $params["shuka_print_dt"] = $_REQUEST["shuka_dt"];
-                $params["shuka_print_qty"] = intval($_REQUEST["shuka_print_qty"]);
-                $params["customer_cd"] = $_REQUEST["customer_cd"];
-                $params["user_id"] = $_SESSION["user_id"];
+                $params["shuka_dt"]         = $_REQUEST["shuka_dt"];
+                $params["shuka_print_dt"]   = $_REQUEST["shuka_dt"];
+                $params["shuka_print_qty"]  = intval($_REQUEST["shuka_print_qty"]);
+                $params["customer_cd"]      = $_REQUEST["customer_cd"];
+                $params["user_id"]          = $_SESSION["user_id"];
 
                 $sth = $dbh->prepare($sql);
                 $sth->execute($params);
@@ -4563,12 +4852,12 @@ try {
 
             $whr = "";
             $params = array();
-            $params["customer_cd"] = $_REQUEST["customer_cd"];
-            $params["shuka_dt"] = $_REQUEST["shuka_dt"];
+            $params["customer_cd"]  = $_REQUEST["customer_cd"];
+            $params["shuka_dt"]     = $_REQUEST["shuka_dt"];
 
             if ($_REQUEST["shuka_print_qty"] > 0) {
                 $whr = " AND shuka_print_qty = :shuka_print_qty";
-                $params["shuka_print_qty"] = $_REQUEST["shuka_print_qty"];
+                $params["shuka_print_qty"]  = $_REQUEST["shuka_print_qty"];
             };
 
             $sql .= $whr . " GROUP BY shuka_dt, sender_cd ORDER BY shuka_dt";
@@ -4672,10 +4961,10 @@ try {
                 AND shuka_print_qty = :shuka_print_qty;";
 
                 $params = array();
-                $params["customer_cd"] = $_REQUEST["customer_cd"];
-                $params["shuka_dt"] = $_REQUEST["shuka_dt"];
-                $params["shuka_print_qty"] = $_REQUEST["shuka_print_qty"];
-                $params["user_id"] = $_SESSION["user_id"];
+                $params["customer_cd"]      = $_REQUEST["customer_cd"];
+                $params["shuka_dt"]         = $_REQUEST["shuka_dt"];
+                $params["shuka_print_qty"]  = $_REQUEST["shuka_print_qty"];
+                $params["user_id"]          = $_SESSION["user_id"];
 
                 $sth = $dbh->prepare($sql);
                 $sth->execute($params);
@@ -5107,13 +5396,13 @@ try {
              */
 
             //SFTP 情報を設定
-            $ftp_host = $ftp_info["host"];
-            $ftp_ip = $ftp_info["server_ip"];
-            $ftp_port = intval($ftp_info["port"]);
-            $ftp_username = $ftp_info["account_id"];
-            $ftp_userpass = $ftp_info["account_pwd"];
-            $ftp_pasv = ($ftp_info["pasv_mode"] == '1') ? true : false;
-            $ftp_file = $ftp_info["file_name"];
+            $ftp_host       = $ftp_info["host"];
+            $ftp_ip         = $ftp_info["server_ip"];
+            $ftp_port       = intval($ftp_info["port"]);
+            $ftp_username   = $ftp_info["account_id"];
+            $ftp_userpass   = $ftp_info["account_pwd"];
+            $ftp_pasv       = ($ftp_info["pasv_mode"] == '1') ? true : false;
+            $ftp_file       = $ftp_info["file_name"];
 
             if (empty($ftp_host)) throw new Exception("SFTPのホスト名はありません。");
 
@@ -5124,7 +5413,7 @@ try {
             //SSH Connection
             //SSH 接続
             $ssh_conn = ssh2_connect($ftp_host, $ftp_port);
-            
+
             if (!$ssh_conn) {
                 unlink($file);
                 throw new Exception("SFTPの接続に失敗しました。");
@@ -5234,14 +5523,14 @@ try {
             $mail_address = $sth->fetchAll(PDO::FETCH_ASSOC);
 
             //メール情報を設定
-            $mail_host = $ftp_info["mail_host"];
-            $mail_port = $ftp_info["mail_port"];
+            $mail_host  = $ftp_info["mail_host"];
+            $mail_port  = $ftp_info["mail_port"];
             $mail_uname = $ftp_info["mail_user"];
-            $mail_pwd = $ftp_info["mail_pwd"];
+            $mail_pwd   = $ftp_info["mail_pwd"];
             //$mail_address = $ftp_info["mail_address"];
-            $mail_from = $ftp_info["mail_from"];
-            $title = "受注管理システム　出荷予定データ送信正常終了";
-            $body = "出荷予定データ送信が正常に終了しました。";
+            $mail_from  = $ftp_info["mail_from"];
+            $title      = "受注管理システム　出荷予定データ送信正常終了";
+            $body       = "出荷予定データ送信が正常に終了しました。";
 
             //メール送信
             if (!empty($mail_host) && !empty($mail_port) && !empty($mail_uname) && !empty($mail_pwd) && !empty($mail_from)) {
@@ -5553,7 +5842,7 @@ try {
 
             //2) create pdf
             $fname = TEMP_FOLDER . "invoice_" . uniqid(mt_rand(), true) . PDF;
-            invoice($fname, $data, $bank_info);
+            invoice($fname, $data, $bank_info, $_REQUEST["dt_from"], $_REQUEST["dt_to"]);
 
             //3) send pdf blob
             header('Content-Type: application/pdf', false);
@@ -5596,9 +5885,9 @@ try {
                     AND h.sale_dt <= :dt_to";
 
             $params = array();
-            $params["bill_dt"] = $_REQUEST["bill_dt"];
-            $params["dt_from"] = $_REQUEST["dt_from"];
-            $params["dt_to"] = $_REQUEST["dt_to"];
+            $params["bill_dt"]  = $_REQUEST["bill_dt"];
+            $params["dt_from"]  = $_REQUEST["dt_from"];
+            $params["dt_to"]    = $_REQUEST["dt_to"];
 
             if ($_REQUEST["tokuisaki_tel"] != "") {
                 $params["tokuisaki_tel"] = $_REQUEST["tokuisaki_tel"];
@@ -5828,8 +6117,8 @@ try {
                     ORDER BY h.sale_dt, h.order_no;";
 
             $params = array();
-            $params["inquire_no"] = $_REQUEST["inquire_no"];
-            $params["shuka_dt"] = $_REQUEST["shuka_dt"];
+            $params["inquire_no"]   = $_REQUEST["inquire_no"];
+            $params["shuka_dt"]     = $_REQUEST["shuka_dt"];
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -5953,6 +6242,16 @@ try {
 
             echo json_encode("OK", JSON_UNESCAPED_UNICODE);
             break;
+
+        case "currentYamatoDate":
+            //GET LATEST UPDATE DATE
+            $sql = "SELECT COALESCE(MAX(create_dt),'0') AS create_dt FROM m_yamato;";
+            $sth = $dbh->prepare($sql);
+            $sth->execute();
+            $dt = $sth->fetchColumn();
+
+            echo json_encode($dt, JSON_UNESCAPED_UNICODE);
+            break;
     }
 } catch (Exception $e) {
     $log->error($e->getMessage());
@@ -5985,6 +6284,11 @@ function timeLog($data)
     file_put_contents(TEMP_FOLDER . "sql_log", $data . PHP_EOL, FILE_APPEND);
 
     //fclose($fp);
+}
+
+function tokuisakiUpdateLog($data)
+{
+    file_put_contents(LOG_PATH . "tokuisaki_update.log", $data . PHP_EOL, FILE_APPEND);
 }
 
 /**
@@ -6039,4 +6343,32 @@ function Create7DRCheckDigit($strString)
         $lCheckDigit = ($lCheckDigit * 10 + $iAsc - ord('0')) % 7;
     }
     return $lCheckDigit;
+}
+
+function logSaleInsert($data, $inquire_no)
+{
+    $resultString = "[" . date("Y/m/d H:i:s") . "] ";
+    foreach ($data as $name => $value) {
+        $resultString .= "$name=$value&";
+    }
+    $resultString .= "inquire_no=$inquire_no";
+
+    file_put_contents(LOG_PATH . "sale_reg.log", $resultString . PHP_EOL, FILE_APPEND);
+};
+
+function logSaleUpdate($data, $inquire_no)
+{
+    $resultString = "[" . date("Y/m/d H:i:s") . "] ";
+    foreach ($data as $name => $value) {
+        $resultString .= "$name=$value&";
+    }
+    $resultString .= "inquire_no=$inquire_no";
+
+    file_put_contents(LOG_PATH . "sale_update.log", $resultString . PHP_EOL, FILE_APPEND);
+}
+
+function logUserLogin($uid)
+{
+    $resultString = "[LOGIN] [" . date("Y/m/d H:i:s") . "] [$uid]";
+    file_put_contents(LOG_PATH . "user_login.log", $resultString . PHP_EOL, FILE_APPEND);
 }

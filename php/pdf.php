@@ -1728,6 +1728,17 @@ function shukaIrai($fname, $data)
 function urikake($fname, $data, $date_from, $date_to)
 {
     try {
+        $dbh = new PDO(DB_CON_STR, DB_USER, DB_PASS);
+        $sql = "select sum(cast(total_cost as integer)) as total_cost, 
+                sum(cast(tax_8 as integer)) as tax_8,
+                sum(cast(tax_10 as integer)) as tax_10,
+                sum(cast(grand_total as integer)) as grand_total from t_sale_h
+                where tokuisaki_cd = :tokuisaki_cd
+                AND sale_dt >= :dt_from 
+                AND sale_dt <= :dt_to;";
+                
+        $sth = $dbh->prepare($sql);
+
         $cnt = count($data);
         $tokuisaki_cd = null;
 
@@ -1750,12 +1761,20 @@ function urikake($fname, $data, $date_from, $date_to)
             if ($data[$i]["tokuisaki_cd"] != $tokuisaki_cd) {
                 $tokuisaki_cd = $data[$i]["tokuisaki_cd"];
 
+                $params = array();
+                $params["tokuisaki_cd"] = $tokuisaki_cd;
+                $params["dt_from"] = $date_from;
+                $params["dt_to"] = $date_to;
+
+                $sth->execute($params);
+                $cost_data = $sth->fetchAll(PDO::FETCH_ASSOC);
+
                 $pdf->setTokuisakiCd($tokuisaki_cd);
                 $pdf->setTokuisakiNm($data[$i]["tokuisaki_nm"]);
-                $pdf->setTotal(number_format($data[$i]["total_cost"]));
-                $pdf->setTax8(number_format($data[$i]["tax_8"]));
-                $pdf->setTax10(number_format($data[$i]["tax_10"]));
-                $pdf->setGrandTotal(number_format($data[$i]["grand_total"]));
+                $pdf->setTotal(number_format($cost_data[0]["total_cost"]));
+                $pdf->setTax8(number_format($cost_data[0]["tax_8"]));
+                $pdf->setTax10(number_format($cost_data[0]["tax_10"]));
+                $pdf->setGrandTotal(number_format($cost_data[0]["grand_total"]));
 
                 $pdf->AddPage();
                 $pdf->setY(60);
@@ -1791,13 +1810,24 @@ function urikake($fname, $data, $date_from, $date_to)
  * @param array $data An object array of the data
  * @param array $bank_info An array of the different bank accounts
  */
-function invoice($fname, $data, $bank_info)
+function invoice($fname, $data, $bank_info, $dt_from, $dt_to)
 {
     try {
+        $dbh = new PDO(DB_CON_STR, DB_USER, DB_PASS);
+        $sql = "select sum(cast(total_cost as integer)) as total_cost, 
+                sum(cast(tax_8 as integer)) as tax_8,
+                sum(cast(tax_10 as integer)) as tax_10,
+                sum(cast(grand_total as integer)) as grand_total from t_sale_h
+                where tokuisaki_cd = :tokuisaki_cd
+                AND sale_dt >= :dt_from 
+                AND sale_dt <= :dt_to;";
+        $sth = $dbh->prepare($sql);
+
         $cnt = count($data);
 
         $order_no = null;
         $tokuisaki_cd = null;
+        $grand_total = null;
         $pdf = new invoicePDF("L");
 
         $pdf->SetCreator("株式会社ロジ・グレス");
@@ -1820,13 +1850,22 @@ function invoice($fname, $data, $bank_info)
                 $order_no = ltrim($data[$i]["order_no"], '0');
                 $tokuisaki_cd = $data[$i]["tokuisaki_cd"];
 
+                //get total cost
+                $params = array();
+                $params["tokuisaki_cd"] = $tokuisaki_cd;
+                $params["dt_from"] = $dt_from;
+                $params["dt_to"] = $dt_to;
+
+                $sth->execute($params);
+                $cost_data = $sth->fetchAll(PDO::FETCH_ASSOC);
+
                 $pdf->setOrderNo($order_no);
                 $pdf->setNohinDt($data[$i]["nohin_dt"]);
                 $pdf->setTokuisakiNm($data[$i]["tokuisaki_nm"]);
-                $pdf->setTotal(number_format($data[$i]["total_cost"]));
-                $pdf->setTax8(number_format($data[$i]["tax_8"]));
-                $pdf->setTax10(number_format($data[$i]["tax_10"]));
-                $pdf->setGrandTotal(number_format($data[$i]["grand_total"]));
+                $pdf->setTotal(number_format($cost_data[0]["total_cost"]));
+                $pdf->setTax8(number_format($cost_data[0]["tax_8"]));
+                $pdf->setTax10(number_format($cost_data[0]["tax_10"]));
+                $pdf->setGrandTotal(number_format($cost_data[0]["grand_total"]));
 
                 $dateTime = new DateTime($data[$i]["seikyu_dt"] . '/01');
                 $lastDay = $dateTime->format('t');
@@ -3006,12 +3045,12 @@ function yamatoDaibiki($fname, $data)
 
         $pdf->SetFont('kozgopromedium', '', 9);
         //TEL
-        $pdf->MultiCell(50, null, "TEL. " . $data[0]["okurisaki_tel"], 0, 'L', false, 0, 10, 78);
+        $pdf->MultiCell(50, null, "TEL. " . $data[0]["okurisaki_tel"], 0, 'L', false, 0, 10, 77);
         //ZIP
-        $pdf->MultiCell(50, null, "〒" . $data[0]["okurisaki_zip"], 0, 'L', false, 0, 10, 82);
+        $pdf->MultiCell(50, null, "〒" . $data[0]["okurisaki_zip"], 0, 'L', false, 0, 10, 81);
         //ADDRESS
-        $pdf->SetFont('kozgopromedium', '', 8);
-        $pdf->MultiCell(55, 5, $data[0]["okurisaki_adr_1"] . $data[0]["okurisaki_adr_2"] . $data[0]["okurisaki_adr_3"], 0, 'L', false, 0, 10, 86);
+        $pdf->SetFont('kozgopromedium', '', 7);
+        $pdf->MultiCell(55, 5, $data[0]["okurisaki_adr_1"] . $data[0]["okurisaki_adr_2"] . $data[0]["okurisaki_adr_3"], 0, 'L', false, 0, 10, 85);
         // $pdf->MultiCell(50, null, $data[0]["okurisaki_adr_3"], 0, 'L', false, 0, 10, 90);
         //得意先
         $pdf->SetFont('kozgopromedium', '', 9);
@@ -3025,7 +3064,7 @@ function yamatoDaibiki($fname, $data)
         if ($data[0]["jikai_kbn_3"] != "なし") {
             $jikai .= $data[0]["jikai_kbn_3"];
         }
-        $pdf->MultiCell(55, null, $data[0]["okurisaki_nm"] . $jikai . "　様", 0, 'L', false, 0, 10, 94);
+        $pdf->MultiCell(65, null, $data[0]["okurisaki_nm"] . $jikai . "　様", 0, 'L', false, 0, 10, 95);
 
         //問い合わせ番号
         $pdf->MultiCell(30, 5, substr($data[0]["inquire_no"], 0, 4) . "-" . substr($data[0]["inquire_no"], 4, 4) . "-" . substr($data[0]["inquire_no"], 8), 0, 'L', false, 0, 75, 74);
@@ -3136,7 +3175,7 @@ function yamatoDaibiki($fname, $data)
         if ($data[0]["jikai_kbn_3"] != "なし") {
             $jikai .= $data[0]["jikai_kbn_3"];
         }
-        $pdf->MultiCell(55, null, $data[0]["okurisaki_nm"] . $jikai . "　様", 0, 'L', false, 0, 10, 182);
+        $pdf->MultiCell(65, null, $data[0]["okurisaki_nm"] . $jikai . "　様", 0, 'L', false, 0, 10, 182);
 
         //問い合わせ番号
         $pdf->MultiCell(30, 5, substr($data[0]["inquire_no"], 0, 4) . "-" . substr($data[0]["inquire_no"], 4, 4) . "-" . substr($data[0]["inquire_no"], 8), 0, 'L', false, 0, 76, 164);
@@ -3228,6 +3267,11 @@ function yamatoMotoBarai($fname, $data)
 
         for ($i = 0; $i < $kosu; $i++) {
 
+            if ($i != 0) {
+                $barcode1 = getMotoBaraiInquireNo();
+                $barcode1_str = "A" . $barcode1 . "A";
+            };
+
             $pdf->AddPage();
 
             //商品 Y position
@@ -3263,7 +3307,7 @@ function yamatoMotoBarai($fname, $data)
             $pdf->MultiCell(65, null, $data[0]["okurisaki_nm"] . $jikai . "　様", 0, 'L', false, 0, 13, 38);
 
             //問い合わせ番号
-            $pdf->MultiCell(50, null, substr($data[0]["inquire_no"], 0, 4) . "-" . substr($data[0]["inquire_no"], 4, 4) . "-" . substr($data[0]["inquire_no"], 8), 0, 'L', false, 0, 70, 16);
+            $pdf->MultiCell(50, null, substr($barcode1, 0, 4) . "-" . substr($barcode1, 4, 4) . "-" . substr($barcode1, 8), 0, 'L', false, 0, 70, 16);
 
             //年
             $pdf->MultiCell(50, null, date('y', strtotime($data[0]["sale_dt"])), 0, 'L', false, 0, 86, 19);
@@ -3373,10 +3417,10 @@ function yamatoMotoBarai($fname, $data)
             if ($data[0]["jikai_kbn_3"] != "なし") {
                 $jikai .= $data[0]["jikai_kbn_3"];
             }
-            $pdf->MultiCell(65, null, $data[0]["okurisaki_nm"] . $jikai . "　様", 0, 'L', false, 0, 13, 126);
+            $pdf->MultiCell(65, null, $data[0]["okurisaki_nm"] . $jikai . "　様", 0, 'L', false, 0, 13, 130);
 
             //問い合わせ番号
-            $pdf->MultiCell(50, null, substr($data[0]["inquire_no"], 0, 4) . "-" . substr($data[0]["inquire_no"], 4, 4) . "-" . substr($data[0]["inquire_no"], 8), 0, 'L', false, 0, 70, 105);
+            $pdf->MultiCell(50, null, substr($barcode1, 0, 4) . "-" . substr($barcode1, 4, 4) . "-" . substr($barcode1, 8), 0, 'L', false, 0, 70, 105);
 
             //年
             $pdf->MultiCell(50, null, date('y', strtotime($data[0]["sale_dt"])), 0, 'L', false, 0, 86, 109);
@@ -3442,8 +3486,8 @@ function yamatoDaibikiMotoBarai($fname, $data)
     try {
 
         $kosu = $data[0]["kosu"];
-        $barcode1 = $data[0]["inquire_no"];
-        $barcode1_str = "A" . $data[0]["inquire_no"] . "A";
+        // $barcode1 = getMotoBaraiInquireNo() ?? $data[0]["inquire_no"];
+        // $barcode1_str = "A" . $barcode1 . "A";
         $barcode2 = $data[0]["yamato_delivery_cd"];
         $barcode2_str = substr($data[0]["yamato_delivery_cd"], 1, 2) . "-" . substr($data[0]["yamato_delivery_cd"], 3, 2) . "-" . substr($data[0]["yamato_delivery_cd"], 5, 2);
 
@@ -3470,6 +3514,9 @@ function yamatoDaibikiMotoBarai($fname, $data)
 
         for ($i = 1; $i < $kosu; $i++) {
 
+            $barcode1 = getMotoBaraiInquireNo() ?? $data[0]["inquire_no"];
+            $barcode1_str = "A" . $barcode1 . "A";
+
             $pdf->AddPage();
 
             //商品 Y position
@@ -3489,6 +3536,7 @@ function yamatoDaibikiMotoBarai($fname, $data)
             //ZIP
             $pdf->MultiCell(50, null, "〒" . $data[0]["okurisaki_zip"], 0, 'L', false, 0, 13, 23);
             //ADDRESS
+            $pdf->SetFont('kozgopromedium', '', 8);
             $pdf->MultiCell(65, 5, $data[0]["okurisaki_adr_1"] . $data[0]["okurisaki_adr_2"] . $data[0]["okurisaki_adr_3"], 0, 'L', false, 0, 13, 27);
             //$pdf->MultiCell(65, null, $data[0]["okurisaki_adr_3"], 0, 'L', false, 0, 13, 31);
             //NAME
@@ -3505,7 +3553,7 @@ function yamatoDaibikiMotoBarai($fname, $data)
             $pdf->MultiCell(65, null, $data[0]["okurisaki_nm"] . $jikai . "　様", 0, 'L', false, 0, 13, 38);
 
             //問い合わせ番号
-            $pdf->MultiCell(50, null, substr($data[0]["inquire_no"], 0, 4) . "-" . substr($data[0]["inquire_no"], 4, 4) . "-" . substr($data[0]["inquire_no"], 8), 0, 'L', false, 0, 70, 16);
+            $pdf->MultiCell(50, null, substr($barcode1, 0, 4) . "-" . substr($barcode1, 4, 4) . "-" . substr($barcode1, 8), 0, 'L', false, 0, 70, 16);
 
             //年
             $pdf->MultiCell(50, null, date('y', strtotime($data[0]["sale_dt"])), 0, 'L', false, 0, 86, 19);
@@ -3600,6 +3648,7 @@ function yamatoDaibikiMotoBarai($fname, $data)
             //ZIP
             $pdf->MultiCell(50, null, "〒" . $data[0]["okurisaki_zip"], 0, 'L', false, 0, 13, 114);
             //ADDRESS
+            $pdf->SetFont('kozgopromedium', '', 8);
             $pdf->MultiCell(65, 5, $data[0]["okurisaki_adr_1"] . $data[0]["okurisaki_adr_2"] . $data[0]["okurisaki_adr_3"], 0, 'L', false, 0, 13, 118);
             //$pdf->MultiCell(65, null, $data[0]["okurisaki_adr_3"], 0, 'L', false, 0, 13, 122);
             //NAME
@@ -3613,10 +3662,10 @@ function yamatoDaibikiMotoBarai($fname, $data)
             if ($data[0]["jikai_kbn_3"] != "なし") {
                 $jikai .= $data[0]["jikai_kbn_3"];
             }
-            $pdf->MultiCell(65, null, $data[0]["okurisaki_nm"] . $jikai . "　様", 0, 'L', false, 0, 13, 126);
+            $pdf->MultiCell(65, null, $data[0]["okurisaki_nm"] . $jikai . "　様", 0, 'L', false, 0, 13, 130);
 
             //問い合わせ番号
-            $pdf->MultiCell(50, null, substr($data[0]["inquire_no"], 0, 4) . "-" . substr($data[0]["inquire_no"], 4, 4) . "-" . substr($data[0]["inquire_no"], 8), 0, 'L', false, 0, 70, 105);
+            $pdf->MultiCell(50, null, substr($barcode1, 0, 4) . "-" . substr($barcode1, 4, 4) . "-" . substr($barcode1, 8), 0, 'L', false, 0, 70, 105);
 
             //年
             $pdf->MultiCell(50, null, date('y', strtotime($data[0]["sale_dt"])), 0, 'L', false, 0, 86, 109);
@@ -3666,7 +3715,6 @@ function yamatoDaibikiMotoBarai($fname, $data)
             $pdf->write1DBarcode($barcode1, 'CODABAR', 50, 160, 40, 10, 0.4);
             $pdf->MultiCell(35, null, strtolower($barcode1_str), 0, 'C', false, 0, 50, 170);
         }
-
 
         $pdf->Output($fname, "F");
     } catch (Exception $e) {
@@ -3964,84 +4012,16 @@ function statementOfDelivery($fname, $data, $shuka_dt)
 
 class shukaReportPDF extends TCPDF
 {
-    private $date_from;
-    private $date_to;
-    private $shuka_dt;
-    private $sender_cd;
-    private $dt;
-
-    public function setDateFrom($date)
-    {
-        $this->date_from = $date;
-    }
-    public function setDateTo($date)
-    {
-        $this->date_to = $date;
-    }
-    public function setShukaDate($date)
-    {
-        $this->shuka_dt = $date;
-    }
-    public function setSenderCd($cd)
-    {
-        $this->sender_cd = $cd;
-    }
-    public function setDt($dt)
-    {
-        $this->dt = $dt;
-    }
-
-    public function getDateFrom()
-    {
-        return $this->date_from;
-    }
-    public function getDateTo()
-    {
-        return $this->date_to;
-    }
-    public function getShukaDt()
-    {
-        return $this->shuka_dt;
-    }
-    public function getSenderCd()
-    {
-        return $this->sender_cd;
-    }
-    public function getDt()
-    {
-        return $this->dt;
-    }
-
-
     //Page header
-    public function Header()
-    {
-        $this->SetFont('kozgopromedium');
-
-        $this->setFontSize(10);
-        $this->MultiCell(80, 10, "出荷日：" . $this->getDateFrom() . " ～ " . $this->getDateTo(), 0, 'L', false, 0, 10, 10);
-
-        $this->MultiCell(60, 10, "指定日：" . $this->getShukaDt(), 0, 'R', false, 0, 140, 10);
-
-        //TITLE
-        $this->setFontSize(12);
-        $this->MultiCell(70, 12, "出荷日報", 0, 'C', false, 0, 70, 15, true, 0, false, true, 12, 'M');
-
-        //出荷日
-        $this->setFontSize(10);
-        $this->MultiCell(60, 10, "◆出荷日：" . date("Y年m月d日", strtotime($this->getDt())), 0, 'L', false, 0, 10, 30);
-        //NAME
-        if ($this->getSenderCd()) {
-            $this->MultiCell(null, 6, "荷送人：　" . COMPANY, "B", 'L', false, 1, 10, 35);
-        } else {
-            $this->MultiCell(null, 6, "荷送人：　その他", "B", 'L', false, 1, 10, 35);
-        }
-
-        // $this->MultiCell(60, 10, "ご依頼主", 0, 'L', false, 0, 10, 46);
-        // $this->MultiCell(60, 10, "お届け先名", 0, 'L', false, 0, 22, 50);
-        // $this->MultiCell(60, 10, "商品明細", 0, 'L', false, 1, 10, 55);
-        // $this->MultiCell(null, 6, "個数", "B", 'R', false, 1, 10, 55);
-    }
+    // public function Header()
+    // {
+    //     $this->setFillColor(204, 204, 204);
+    //     $this->SetFont('kozgopromedium', 'I', 22);
+    //     // Title
+    //     $this->Cell(0, 15, '商　　品　　台　　帳', 0, false, 'C', true, '', 0, false, 'M', 'M');
+    //     $this->SetFont('kozgopromedium', '', 10);
+    //     $this->text(260, 25, date("Y/m/d"));
+    // }
     public function Footer()
     {
         $this->SetFont('kozgopromedium', '', 10);
@@ -4067,96 +4047,118 @@ function shukaReportData($fname, $data, $mesai, $shuka_dt)
         $pdf->SetAuthor("株式会社ロジ・グレス");
         $pdf->SetTitle('出荷日報');
         $pdf->SetSubject('出荷日報');
-        $pdf->SetHeaderMargin(41);
+        $pdf->SetHeaderMargin(0);
         $pdf->setFooterMargin(15);
         $pdf->setAutoPageBreak(true, 15);
-        $pdf->setPrintHeader(true);
+        $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(true);
-        $pdf->setTopMargin(41);
 
-        $pdf->setDateFrom($date_from);
-        $pdf->setDateTo($date_to);
-        $pdf->setShukaDate($shuka_dt);
+        $pdf->AddPage();
+        $pdf->SetFont('kozgopromedium');
+
+        $pdf->setFontSize(10);
+        $pdf->MultiCell(80, 10, "出荷日：" . $date_from . " ～ " . $date_to, 0, 'L', false, 0, 10, 10);
+
+        $pdf->MultiCell(60, 10, "指定日：" . $shuka_dt, 0, 'R', false, 0, 140, 10);
+
+        // $pdf->MultiCell(60, 10, $pdf->getAliasNumPage() . ' ／ ' . $pdf->getAliasNbPages() . " ページ", 0, 'R', false, 0, 145, 18);
+
+        //TITLE
+        $pdf->setFontSize(18);
+        $pdf->MultiCell(70, 12, "出荷日報", 0, 'C', false, 0, 70, 25, true, 0, false, true, 12, 'M');
+
+        //出荷日
+        $pdf->setFontSize(10);
+        $pdf->MultiCell(60, 10, "◆出荷日：" . date("Y年m月d日", strtotime($dt)), 0, 'L', false, 0, 10, 45);
+        //NAME
+        if ($data[0]["sender_cd"] == 1) {
+            $pdf->MultiCell(null, 10, "荷送人：　" . COMPANY, "B", 'L', false, 0, 10, 52);
+        } else {
+            $pdf->MultiCell(null, 10, "荷送人：　その他", "B", 'L', false, 0, 10, 52);
+        }
+
+        $pdf->MultiCell(60, 10, "ご依頼主", 0, 'L', false, 0, 10, 65);
+        $pdf->MultiCell(60, 10, "お届け先名", 0, 'L', false, 0, 22, 72);
+        $pdf->MultiCell(60, 10, "商品明細", 0, 'R', false, 1, 10, 78);
+        $pdf->MultiCell(null, 6, "個数", "B", 'R', false, 1, 10, 78);
+        $pdf->MultiCell(null, 2, "", 0, 'L', false, 1);
 
         for ($r = 0; $r < $cnt; $r++) {
-            if ($r == 0) {
-                $pdf->setDt($data[$r]["shuka_dt"]);
-                $pdf->setSenderCd($data[$r]["sender_cd"]);
+            if ($dt != $data[$r]["shuka_dt"]) {
                 $kosu = 0;
-
-                $pdf->AddPage();
-            } else if ($dt != $data[$r]["shuka_dt"]) {
                 $dt = $data[$r]["shuka_dt"];
-                $pdf->setDt($data[$r]["shuka_dt"]);
-                $pdf->setSenderCd($data[$r]["sender_cd"]);
-                $kosu = 0;
-
                 $pdf->AddPage();
-            } else if ($r % 7 == 0) {
-                // $pdf->setDt($data[$r]["shuka_dt"]);
-                // $pdf->setSenderCd($data[$r]["sender_cd"]);
-                // $pdf->AddPage();
+                $pdf->setFontSize(10);
+                $pdf->MultiCell(80, 10, "出荷日：" . $date_from . " ～ " . $date_to, 0, 'L', false, 0, 10, 10);
 
+                $pdf->MultiCell(60, 10, "指定日：" . $shuka_dt, 0, 'R', false, 0, 140, 10);
+
+                //$pdf->MultiCell(60, 10, $pdf->getAliasNumPage() . ' ／ ' . $pdf->getAliasNbPages() . " ページ", 0, 'R', false, 0, 145, 18);
+
+                //TITLE
+                $pdf->setFontSize(18);
+                $pdf->MultiCell(70, 12, "出荷日報", 0, 'C', false, 0, 70, 25, true, 0, false, true, 12, 'M');
+
+                //出荷日
+                $pdf->setFontSize(10);
+                $pdf->MultiCell(60, 10, "◆出荷日：" . date("Y年m月d", strtotime($dt)), 0, 'L', false, 0, 10, 45);
+                //NAME
+                if ($data[$r]["sender_cd"] == 1) {
+                    $pdf->MultiCell(null, 10, "荷送人：　" . COMPANY, "B", 'L', false, 0, 10, 52);
+                } else {
+                    $pdf->MultiCell(null, 10, "荷送人：　その他", "B", 'L', false, 0, 10, 52);
+                }
+
+                $pdf->MultiCell(60, 10, "ご依頼主", 0, 'L', false, 0, 10, 65);
+                $pdf->MultiCell(60, 10, "お届け先名", 0, 'L', false, 0, 22, 72);
+                $pdf->MultiCell(60, 10, "商品明細", 0, 'R', false, 1, 10, 78);
+                $pdf->MultiCell(null, 6, "個数", "B", 'R', false, 1, 10, 78);
+                $pdf->MultiCell(null, 2, "", 0, 'L', false, 1);
             }
-
             $kosu += $data[$r]["kosu"];
             $order_no = $data[$r]["order_no"];
 
-            $pdf->setFont("kozgopromedium", "B", 10);
-            //$pdf->setFontSize(10);
+            $pdf->setFontSize(10);
             //TEL
-            $pdf->MultiCell(40, 5, substr($data[$r]["tokuisaki_tel"], 0, 3) . "-" . substr($data[$r]["tokuisaki_tel"], 3, 3) . "-" . substr($data[$r]["tokuisaki_tel"], 6), 0, "L", false, 0, 10);
-            //$pdf->Cell(40, 5, substr($data[$r]["tokuisaki_tel"], 0, 3) . "-" . substr($data[$r]["tokuisaki_tel"], 3, 3) . "-" . substr($data[$r]["tokuisaki_tel"], 6), 0, 0,"L");
-
+            $pdf->Cell(40, 5, $data[$r]["tokuisaki_tel"]);
             //NAME
-            $pdf->MultiCell(null, 5, $data[$r]["tokuisaki_nm"], 0, "L", false, 1);
-            $pdf->setFont("kozgopromedium", "", 9);
-            //ADDRESS
-            $pdf->MultiCell(null, 5, $data[$r]["address"] . $data[$r]["building"], 0, 'L', false, 1, 15);
-
-            //問合せ番号
-            $pdf->setFontSize(8);
-            $pdf->MultiCell(50, 5, "問合番号： " . $data[$r]["inquire_no"], 0, 'L', false, 1, 147);
-
-            //バーコード
-            $pdf->write1DBarcode($data[$r]["inquire_no"], 'CODABAR', 145, null, 50, 10, 0.4);
-
-            //金額
-            $pdf->setFontSize(9);
-            $pdf->MultiCell(60, 5, "代引金額： " . number_format($data[$r]["grand_total"]) . "円", 0, 'L', false, 0, 15);
-            //個数
-            $pdf->setFont("kozgopromedium", "B", 9);
-            $pdf->MultiCell(20, 5, "個数： " . $data[$r]["kosu"], 0, 'L', false, 1, 98);
-
-
-            $pdf->setFont("kozgopromedium", "", 9);
+            $pdf->Cell(null, 5, $data[$r]["tokuisaki_nm"], 0, 1);
+            $pdf->Cell(null, 5, "", 0, 1);
+            //問い合わせ番号
+            $pdf->MultiCell(60, 8, "問合番号：" . $data[$r]["inquire_no"], 0, 'L', false, 0, 20);
             //受注番号
-            $pdf->MultiCell(60, null, "受注番号： " . $order_no, 0, 'L', false, 1, 15);
+            $pdf->MultiCell(60, 8, "受注番号：" . $order_no, 0, 'L', false, 1, 80);
+            //ADDRESS
+            $pdf->MultiCell(80, 6, $data[$r]["address"], 0, 'L', false, 0, 20);
+            //金額
+            $pdf->MultiCell(60, 6, "代引金額：" . number_format($data[$r]["grand_total"]), 0, 'L', false, 1, 140);
+            //ADDRESS
+            $pdf->MultiCell(80, 10, $data[$r]["building"], 0, 'L', false, 0, 20);
+            //個数
+            $pdf->MultiCell(10, 10, $data[$r]["kosu"], 0, 'L', false, 1, 190);
 
             //PRODUCT LIST
-            $pdf->setFontSize(7);
-            $product = "";
+            $pdf->setFontSize(9);
             foreach ($mesai as &$obj) {
                 if ($obj["order_no"] == $order_no) {
-
+                    //商品名
+                    $pdf->MultiCell(100, 6, $obj["product_nm"], 0, 'L', false, 0, 15);
                     //単位
                     $sale_tani = $obj["tani"];
                     if ($sale_tani == "なし") {
                         $sale_tani = "";
                     };
-                    //数量
                     $qty = $obj["qty"];
                     if (strpos($qty, ".")) {
                         $qty = number_format($obj["qty"], 1);
-                    };
-                    //商品
-                    $product .= $obj["product_nm"] . "  " . $qty . $sale_tani . "　　　";
+                    }
+
+                    $pdf->MultiCell(50, 6, $qty . "　" . $sale_tani, 0, 'L', false, 1, 115);
                 };
             }
             //BOTTOM BORDER
-            $pdf->MultiCell(null, null, $product, "B", 'L', false, 1, 10, null, true, 0, false, true, 6, 'B', true);
+            $pdf->MultiCell(null, 6, "", "T", 'L', false, 1);
 
-            $pdf->setFontSize(9);
             if ($r + 1 == $cnt || $dt != $data[$r + 1]["shuka_dt"]) {
                 $pdf->MultiCell(null, 6, "計　（荷送人）", "B", 'C', false, 0);
                 $pdf->MultiCell(10, 6, $kosu, 0, 'L', false, 1, 190);
@@ -4166,9 +4168,9 @@ function shukaReportData($fname, $data, $mesai, $shuka_dt)
             }
         }
 
+
         $pdf->Output($fname, "F");
     } catch (Exception $e) {
-        error_log($e->getMessage());
         throw $e;
     }
 }
@@ -4205,3 +4207,68 @@ function shukaReportData($fname, $data, $mesai, $shuka_dt)
 //urikake("urikake.pdf", $data);
 //tokuisakiDaicho("tokuisaki_daicho.pdf", $data);
 //shukaIrai("TEST.pdf");
+
+function getMotoBaraiInquireNo()
+{
+    $dbh = null;
+    try {
+        $dbh = new PDO(DB_CON_STR, DB_USER, DB_PASS);
+        $dbh->beginTransaction();
+
+        $sql = "SELECT 
+        (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.motobarai.start') AS yamato_motobarai_start,
+        (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.motobarai.end') AS yamato_motobarai_end,
+        (SELECT kanri_cd FROM m_code WHERE kanri_key = 'yamato.motobarai.current') AS yamato_motobarai_current";
+
+        $sth = $dbh->prepare($sql);
+        $sth->execute();
+        $list = $sth->fetch();
+        $inquire_no = $list["yamato_motobarai_current"];
+
+        //UPDATE YAMATO INQUIRE NO
+        //ヤマトの問い合わせ番号を更新
+        // +1
+        $sql = "UPDATE m_code
+            SET kanri_cd = :yamato_current,
+            update_date = CURRENT_TIMESTAMP
+            WHERE kanri_key = 'yamato.motobarai.current';";
+
+        $param = array();
+        if ($inquire_no + 1 > $list["yamato_motobarai_end"]) {
+            $param["yamato_current"] = $list["yamato_motobarai_start"];
+        } else {
+            $param["yamato_current"] = $inquire_no + 1;
+        }
+        $sth = $dbh->prepare($sql);
+        $sth->execute($param);
+        $dbh->commit();
+
+        $inquire_no = $list["yamato_motobarai_current"] . Create7DRCheckDigitMotobarai($list["yamato_motobarai_current"]);
+
+        return $inquire_no;
+    } catch (Exception $e) {
+        if ($dbh != null) {
+            $dbh->rollBack();
+        }
+        error_log($e->getMessage());
+        return null;
+    }
+}
+
+/**
+ * Create last digit for Yamato inquire number
+ * @param String $strString Inquire number
+ * @return Int Last digit for Yamato inquire_no
+ */
+function Create7DRCheckDigitMotobarai($strString)
+{
+    $lCheckDigit = 0;
+    for ($i = 0; $i < strlen($strString); $i++) {
+        $iAsc = ord(substr($strString, $i, 1));
+        if ($iAsc < ord('0') || ord('9') < $iAsc) {
+            return -1;
+        }
+        $lCheckDigit = ($lCheckDigit * 10 + $iAsc - ord('0')) % 7;
+    }
+    return $lCheckDigit;
+}
