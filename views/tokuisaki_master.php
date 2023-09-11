@@ -33,8 +33,8 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
     <meta content="株式会社ロジ・グレス" name="author">
     <title>得意先マスタ</title>
     <!--[if lt IE 9]><script src="js/common/html5.js"></script><![endif]-->
-    <script src="/js/common/import.js?p=(new Date()).getTime()"></script>
-    <script src="/js/M2_tokuisaki_master.js?p=(new Date()).getTime()"></script>
+    <script src="/js/common/import.js?p=<?php echo date("YmdHis") ?>"></script>
+    <script src="/js/M2_tokuisaki_master.js?p=<?php echo date("YmdHis") ?>"></script>
 </head>
 
 <body>
@@ -52,7 +52,7 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
             <h3>操作パネル</h3>
             <form class="itemSearch" id="frmSearch_pc">
                 <dl>
-                    <dt>代表番号</dt>
+                    <dt>電話番号</dt>
                     <dd><input name="tokuisaki_tel" type="tel" maxlength="12" value="" class="ip_w50" placeholder=""></dd>
                 </dl>
                 <dl>
@@ -101,7 +101,7 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
                 <ul class="itemSearch_sp_open">
                     <form class="itemSearch">
                         <dl>
-                            <dt>代表番号</dt>
+                            <dt>電話番号</dt>
                             <dd><input name="tokuisaki_tel" type="tel" maxlength="11" value="" class="ip_w100" placeholder=""></dd>
                         </dl>
                         <dl>

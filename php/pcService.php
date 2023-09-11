@@ -6,7 +6,7 @@ date_default_timezone_set('Asia/Tokyo');
 require_once("config.php");
 require_once("pdf.php");
 require_once("logger.php");
-require_once('phpmail.php');
+//require_once('phpmail.php');
 
 /**
  * FILE ERROR CHECK
@@ -620,17 +620,18 @@ try {
             $rows = json_decode($_REQUEST["tel_rows"], true);
             if (count($rows) == 0 || $_REQUEST["tel_rows"] == "") throw new Exception("追加電話番号を入力してください。");
 
-            $chk_sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no";
+            $chk_sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no AND daihyo = '1';";
             $chk_sth = $dbh->prepare($chk_sql);
             $params = array();
 
-            for ($i = 0; $i < count($rows); $i++) {
-                $tel = $rows[$i]["tel"];
-                $params["tel_no"] = $rows[$i]["tel"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
-            }
+            //for ($i = 0; $i < count($rows); $i++) {
+            //$tel = $rows[$i]["tel"];
+            $tel = $_REQUEST["tokuisaki_tel"];
+            $params["tel_no"] = $tel;
+            $chk_sth->execute($params);
+            $cnt = $chk_sth->fetchColumn();
+            if ($cnt != 0) throw new Exception("代表番号[$tel]はすでに別の得意先の代表番号に登録されています。");
+            //}
 
             //INSERT TOKUISAKI
             $sql = "INSERT INTO m_tokuisaki (
@@ -780,39 +781,46 @@ try {
             //TOKUISAKI TEL INSERT
             $sql = "INSERT INTO m_tokuisaki_tel(
                             tokuisaki_cd
-                            ,tel_no
+                            , tel_no
+                            , daihyo
                             )VALUES(
                             currval('seq_tokuisaki_cd')
-                            ,:tel_no)";
+                            , :tel_no
+                            , :daihyo)";
             $params = array();
             $insert_sth = $dbh->prepare($sql);
 
             $rows = json_decode($_REQUEST["tel_rows"], true);
             if (count($rows) == 0 || $_REQUEST["tel_rows"] == "") throw new Exception("追加電話番号を入力してください。");
             for ($i = 0; $i < count($rows); $i++) {
+                if ($rows[$i]["tel"] === $_REQUEST["tokuisaki_tel"]) {
+                    $params["daihyo"] = '1';
+                } else {
+                    $params["daihyo"] = '0';
+                }
                 $params["tel_no"] = $rows[$i]["tel"];
                 $insert_sth->execute($params);
             };
 
-            if ($_REQUEST["tokuisaki_fax"] !== "") {
-                $params = array();
-                $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $insert_sth->execute($params);
-                }
-            };
+            // if ($_REQUEST["tokuisaki_fax"] !== "") {
+            //     $params = array();
+            //     $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+            //     if ($cnt === 0) {
+            //         $insert_sth->execute($params);
+            //     }
+            // };
 
-            if ($_REQUEST["fuzai_contact"] !== "") {
-                $params = array();
-                $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $insert_sth->execute($params);
-                }
-            };
+            // if ($_REQUEST["fuzai_contact"] !== "") {
+            //     $params = array();
+            //     $params["tel_no"] = $_REQUEST["fuzai_contact"];
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+            //     if ($cnt === 0) {
+            //         $insert_sth->execute($params);
+            //     }
+            // };
 
             $sql = "SELECT currval('seq_tokuisaki_cd');";
             $sth = $dbh->prepare($sql);
@@ -828,7 +836,7 @@ try {
             session_start();
             $_SESSION['created'] = time();
 
-            $sql  = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no;";
+            $sql  = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no AND daihyo = '1';";
             $params = array();
             $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
 
@@ -838,7 +846,34 @@ try {
             $chk_sth->execute($params);
             $cnt = $chk_sth->fetchColumn();
 
-            if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
+            if ($cnt != 0) throw new Exception("代表番号[$tel]はすでに別の得意先に登録されています。");
+
+            //Update tokuisaki_tel 代表フラグ to 0
+            $sql = "UPDATE m_tokuisaki_tel SET daihyo = '0' WHERE tokuisaki_cd = :tokuisaki_cd;";
+            $sth = $dbh->prepare($sql);
+            $params = array();
+            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+            $sth->execute($params);
+
+            // if ($_REQUEST["tokuisaki_fax"] !== "") {
+            //     $tel = $_REQUEST["tokuisaki_fax"];
+            //     $params["tel_no"] = $tel;
+            //     $chk_sth = $dbh->prepare($sql);
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+
+            //     if ($cnt != 0) throw new Exception("FAX番号[$tel]はすでに別の得意先の代表番号に登録されています。");
+            // }
+
+            // if ($_REQUEST["fuzai_contact"] !== "") {
+            //     $tel = $_REQUEST["fuzai_contact"];
+            //     $params["tel_no"] = $tel;
+            //     $chk_sth = $dbh->prepare($sql);
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+
+            //     if ($cnt != 0) throw new Exception("予備連絡[$tel]はすでに別の得意先の代表番号に登録されています。");
+            // }
 
             //INSERT TOKUISAKI
             $sql = "INSERT INTO m_tokuisaki (
@@ -989,33 +1024,48 @@ try {
             $sql = "INSERT INTO m_tokuisaki_tel(
                             tokuisaki_cd
                             ,tel_no
+                            ,daihyo
                             )VALUES(
                             currval('seq_tokuisaki_cd')
-                            ,:tel_no)";
+                            ,:tel_no
+                            ,:daihyo)";
             $params = array();
             $insert_sth = $dbh->prepare($sql);
 
             $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
+            $params["daihyo"] = '1';
             $insert_sth->execute($params);
 
-            if ($_REQUEST["tokuisaki_fax"] !== "") {
+            //check if 代表番号
+            //$sql  = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no AND daihyo = '1';";
+            //$chk_sth = $dbh->prepare($sql);
+            if (
+                $_REQUEST["tokuisaki_fax"] !== "" &&
+                $_REQUEST["tokuisaki_fax"] !== $_REQUEST["tokuisaki_tel"]
+            ) {
                 $params = array();
                 $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $insert_sth->execute($params);
-                }
+                //$chk_sth->execute($params);
+                //$cnt = $chk_sth->fetchColumn();
+                //if ($cnt === 0) {
+                $params["daihyo"] = '0';
+                $insert_sth->execute($params);
+                //}
             };
 
-            if ($_REQUEST["fuzai_contact"] !== "") {
+            if (
+                $_REQUEST["fuzai_contact"] !== "" &&
+                $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_fax"] &&
+                $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_tel"]
+            ) {
                 $params = array();
                 $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $insert_sth->execute($params);
-                }
+                //$chk_sth->execute($params);
+                //$cnt = $chk_sth->fetchColumn();
+                //if ($cnt === 0) {
+                $params["daihyo"] = '0';
+                $insert_sth->execute($params);
+                //}
             };
 
             //RETURN tokuisaki_cd
@@ -1064,7 +1114,7 @@ try {
             }
 
             //PHONE CHECK
-            $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no;";
+            $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no AND daihyo = '1';";
             $params = array();
             $tel = $_REQUEST["tokuisaki_tel"];
             $params["tel_no"] = $tel;
@@ -1073,17 +1123,46 @@ try {
             $chk_sth->execute($params);
             $cnt = $chk_sth->fetchColumn();
 
-            if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
+            if ($cnt != 0) throw new Exception("代表番号[$tel]はすでに別の得意先に登録されています。");
+
+            // if ($_REQUEST["tokuisaki_fax"] !== "") {
+            //     $tel = $_REQUEST["tokuisaki_fax"];
+            //     $params["tel_no"] = $tel;
+            //     $chk_sth = $dbh->prepare($sql);
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+
+            //     if ($cnt != 0) throw new Exception("FAX番号[$tel]はすでに別の得意先の代表番号に登録されています。");
+            // }
+
+            // if ($_REQUEST["fuzai_contact"] !== "") {
+            //     $tel = $_REQUEST["fuzai_contact"];
+            //     $params["tel_no"] = $tel;
+            //     $chk_sth = $dbh->prepare($sql);
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+
+            //     if ($cnt != 0) throw new Exception("予備連絡[$tel]はすでに別の得意先の代表番号に登録されています。");
+            // }
+
+            //Update tokuisaki_tel 代表フラグ to 0
+            $sql = "UPDATE m_tokuisaki_tel SET daihyo = '0' WHERE tokuisaki_cd = :tokuisaki_cd;";
+            $sth = $dbh->prepare($sql);
+            $params = array();
+            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+            $sth->execute($params);
 
             //TOKUISAKI TEL INSERT
             $sql = "INSERT INTO m_tokuisaki_tel(
                     tokuisaki_cd
                     ,tel_no
+                    ,daihyo
                     , entry_date
                     , update_date
                     )VALUES(
                     :tokuisaki_cd
                     ,:tel_no
+                    ,:daihyo
                     , CURRENT_TIMESTAMP
                     , CURRENT_TIMESTAMP)";
 
@@ -1092,32 +1171,42 @@ try {
             $params = array();
             $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
             $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
+            $params["daihyo"] = '1';
             $insert_sth->execute($params);
 
-            if ($_REQUEST["tokuisaki_fax"] !== "") {
+            if (
+                $_REQUEST["tokuisaki_fax"] !== "" &&
+                $_REQUEST["tokuisaki_fax"] !== $_REQUEST["tokuisaki_tel"]
+            ) {
+                // $params = array();
+                // $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                // $chk_sth->execute($params);
+                // $cnt = $chk_sth->fetchColumn();
+                // if ($cnt === 0) {
                 $params = array();
+                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
                 $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $params = array();
-                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                    $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                    $insert_sth->execute($params);
-                }
+                $params["daihyo"] = '0';
+                $insert_sth->execute($params);
+                //}
             };
 
-            if ($_REQUEST["fuzai_contact"] !== "") {
+            if (
+                $_REQUEST["fuzai_contact"] !== "" &&
+                $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_fax"] &&
+                $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_tel"]
+            ) {
+                // $params = array();
+                // $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                // $chk_sth->execute($params);
+                // $cnt = $chk_sth->fetchColumn();
+                // if ($cnt === 0) {
                 $params = array();
+                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
                 $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $params = array();
-                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                    $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                    $insert_sth->execute($params);
-                }
+                $params["daihyo"] = '0';
+                $insert_sth->execute($params);
+                // }
             };
 
             //UPDATE TOKUISAKI
@@ -1239,72 +1328,80 @@ try {
             $rows = json_decode($_REQUEST["tel_rows"], true);
             if (count($rows) == 0 || $_REQUEST["tel_rows"] == "") throw new Exception("追加電話番号を入力してください。");
 
-            $chk_sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no";
+            $chk_sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no AND daihyo = '1';";
             $chk_sth = $dbh->prepare($chk_sql);
             $params = array();
 
-            for ($i = 0; $i < count($rows); $i++) {
-                $tel = $rows[$i]["tel"];
-                $params["tel_no"] = $rows[$i]["tel"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
-            }
+            //for ($i = 0; $i < count($rows); $i++) {
+            //$tel = $rows[$i]["tel"];
+            $tel = $_REQUEST["tokuisaki_tel"];
+            $params["tel_no"] = $tel;
+            $chk_sth->execute($params);
+            $cnt = $chk_sth->fetchColumn();
+            if ($cnt != 0) throw new Exception("代表番号[$tel]はすでに別の得意先に登録されています。");
+            //}
 
             //TOKUISAKI TEL INSERT
             $sql = "INSERT INTO m_tokuisaki_tel(
                             tokuisaki_cd
                             ,tel_no
+                            ,daihyo
                             ,update_date
                             )VALUES(
                             :tokuisaki_cd
                             ,:tel_no
+                            ,:daihyo
                             ,CURRENT_TIMESTAMP)";
 
             $insert_sth = $dbh->prepare($sql);
 
-            $check_sql = "SELECT COUNT(*) FROM m_tokuisaki_tel
-                            WHERE tokuisaki_cd = :tokuisaki_cd
-                            AND tel_no = :tel_no;";
-            $check_sth = $dbh->prepare($check_sql);
+            // $check_sql = "SELECT COUNT(*) FROM m_tokuisaki_tel
+            //                 WHERE tokuisaki_cd = :tokuisaki_cd
+            //                 AND tel_no = :tel_no;";
+            // $check_sth = $dbh->prepare($check_sql);
 
             $params = array();
             $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
             for ($i = 0; $i < count($rows); $i++) {
+                if ($rows[$i]["tel"] === $_REQUEST["tokuisaki_tel"]) {
+                    $params["daihyo"] = '1';
+                } else {
+                    $params["daihyo"] = '0';
+                }
                 $params["tel_no"] = $rows[$i]["tel"];
-                $check_sth->execute($params);
-                $cnt = $check_sth->fetchColumn();
+                // $check_sth->execute($params);
+                // $cnt = $check_sth->fetchColumn();
 
-                if ($cnt === 0) {
-                    $insert_sth->execute($params);
-                }
+                // if ($cnt === 0) {
+                $insert_sth->execute($params);
+                //}
             };
 
-            if ($_REQUEST["tokuisaki_fax"] !== "") {
-                $params = array();
-                $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $params = array();
-                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                    $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                    $insert_sth->execute($params);
-                }
-            };
+            // if ($_REQUEST["tokuisaki_fax"] !== "") {
+            //     $params = array();
+            //     $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+            //     if ($cnt === 0) {
+            //         $params = array();
+            //         $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+            //         $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+            //         $insert_sth->execute($params);
+            //     }
+            // };
 
-            if ($_REQUEST["fuzai_contact"] !== "") {
-                $params = array();
-                $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $params = array();
-                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                    $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                    $insert_sth->execute($params);
-                }
-            };
+            // if ($_REQUEST["fuzai_contact"] !== "") {
+            //     $params = array();
+            //     $params["tel_no"] = $_REQUEST["fuzai_contact"];
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+            //     if ($cnt === 0) {
+            //         $params = array();
+            //         $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+            //         $params["tel_no"] = $_REQUEST["fuzai_contact"];
+            //         $insert_sth->execute($params);
+            //     }
+            // };
 
             /**
              * LOGGER
@@ -1448,19 +1545,22 @@ try {
             session_start();
             $_SESSION['created'] = time();
 
-            if (!isset($_REQUEST["tokuisaki_cd"]) || $_REQUEST["tokuisaki_cd"] == "") throw new Exception("得意先を入力してください。");
+            if (!isset($_REQUEST["tokuisaki_cd"]) || $_REQUEST["tokuisaki_cd"] == "") throw new Exception("得意先を指定してください。");
 
             $tokuisaki_delete = "DELETE FROM m_tokuisaki WHERE tokuisaki_cd = :tokuisaki_cd";
-            //$okurisaki_delete = "DELETE FROM m_okurisaki WHERE tokuisaki_cd = :tokuisaki_cd";
+            $okurisaki_delete = "DELETE FROM m_okurisaki WHERE tokuisaki_cd = :tokuisaki_cd";
+            $tokuisaki_tel_delete = "DELETE FROM m_tokuisaki_tel WHERE tokuisaki_cd = :tokuisaki_cd;";
 
             $tokuisaki_sth = $dbh->prepare($tokuisaki_delete);
-            //$okurisaki_sth = $dbh->prepare($okurisaki_delete);
+            $okurisaki_sth = $dbh->prepare($okurisaki_delete);
+            $tokuisaki_tel_sth = $dbh->prepare($tokuisaki_tel_delete);
 
             $params = array();
             $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
 
             $tokuisaki_sth->execute($params);
-            // $okurisaki_sth->execute($params);
+            $okurisaki_sth->execute($params);
+            $tokuisaki_tel_sth->execute($params);
 
             $dbh->commit();
 
@@ -2197,7 +2297,6 @@ try {
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
-
 
             $sql = "UPDATE m_product_cd
             SET in_use = FALSE
@@ -2967,7 +3066,7 @@ try {
 
             //PHONE CHECK
             //新しい電話番号は存在するか確認
-            $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no;";
+            $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no AND daihyo = '1';";
             $params = array();
             $tel = $_REQUEST["tokuisaki_tel"];
             $params["tel_no"] = $tel;
@@ -2976,18 +3075,47 @@ try {
             $chk_sth->execute($params);
             $cnt = $chk_sth->fetchColumn();
 
-            if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
+            if ($cnt != 0) throw new Exception("代表番号[$tel]はすでに別の得意先に登録されています。");
+
+            //Update tokuisaki_tel 代表フラグ to 0
+            $sql = "UPDATE m_tokuisaki_tel SET daihyo = '0' WHERE tokuisaki_cd = :tokuisaki_cd;";
+            $sth = $dbh->prepare($sql);
+            $params = array();
+            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+            $sth->execute($params);
+
+            // if ($_REQUEST["tokuisaki_fax"] !== "") {
+            //     $tel = $_REQUEST["tokuisaki_fax"];
+            //     $params["tel_no"] = $tel;
+            //     $chk_sth = $dbh->prepare($sql);
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+
+            //     if ($cnt != 0) throw new Exception("FAX番号[$tel]はすでに別の得意先の代表番号に登録されています。");
+            // }
+
+            // if ($_REQUEST["fuzai_contact"] !== "") {
+            //     $tel = $_REQUEST["fuzai_contact"];
+            //     $params["tel_no"] = $tel;
+            //     $chk_sth = $dbh->prepare($sql);
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+
+            //     if ($cnt != 0) throw new Exception("予備連絡[$tel]はすでに別の得意先の代表番号に登録されています。");
+            // }
 
             //TOKUISAKI TEL INSERT
             //得意先電話番号を登録
             $sql = "INSERT INTO m_tokuisaki_tel(
                             tokuisaki_cd
                             ,tel_no
+                            ,daihyo
                             ,entry_date
                             ,update_date
                             )VALUES(
                             :tokuisaki_cd
                             ,:tel_no
+                            ,:daihyo
                             ,CURRENT_TIMESTAMP
                             ,CURRENT_TIMESTAMP)";
 
@@ -2996,32 +3124,42 @@ try {
             $params = array();
             $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
             $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
+            $params["daihyo"] = "1";
             $insert_sth->execute($params);
 
-            if ($_REQUEST["tokuisaki_fax"] !== "") {
+            if (
+                $_REQUEST["tokuisaki_fax"] !== "" &&
+                $_REQUEST["tokuisaki_fax"] !== $_REQUEST["tokuisaki_tel"]
+            ) {
+                // $params = array();
+                // $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                // $chk_sth->execute($params);
+                // $cnt = $chk_sth->fetchColumn();
+                // if ($cnt === 0) {
                 $params = array();
+                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
                 $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $params = array();
-                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                    $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                    $insert_sth->execute($params);
-                }
+                $params["daihyo"] = '0';
+                $insert_sth->execute($params);
+                // }
             };
 
-            if ($_REQUEST["fuzai_contact"] !== "") {
+            if (
+                $_REQUEST["fuzai_contact"] !== "" &&
+                $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_fax"] &&
+                $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_tel"]
+            ) {
+                // $params = array();
+                // $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                // $chk_sth->execute($params);
+                // $cnt = $chk_sth->fetchColumn();
+                // if ($cnt === 0) {
                 $params = array();
+                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
                 $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $params = array();
-                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                    $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                    $insert_sth->execute($params);
-                }
+                $params["daihyo"] = '0';
+                $insert_sth->execute($params);
+                // }
             };
 
             //TOKUISAKI UPDATE
@@ -3302,11 +3440,12 @@ try {
 
             $params = array();
             for ($i = 0; $i < count($rows); $i++) {
+                $product = $rows[$i]["product_cd"];
                 $params["product_cd"] = $rows[$i]["product_cd"];
                 $sth->execute($params);
                 $chk = $sth->fetchColumn();
 
-                if (empty($chk)) throw new Exception("商品マスタに無いコードが入力されています。");
+                if (empty($chk)) throw new Exception("商品マスタに無いコード[$product]が入力されています。");
             };
 
             //t_sale_d
@@ -3565,7 +3704,7 @@ try {
 
             //PHONE CHECK
             //得意先電話番号は存在するか
-            $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no;";
+            $sql = "SELECT COUNT(tel_no) FROM m_tokuisaki_tel WHERE tel_no = :tel_no AND daihyo = '1';";
             $tel = $_REQUEST["tokuisaki_tel"];
             $params = array();
             $params["tel_no"] = $tel;
@@ -3575,18 +3714,47 @@ try {
             $cnt = $chk_sth->fetchColumn();
 
             // if ($cnt != 0) throw new Exception("代表電話、FAX番号、予備連絡先のいずれかはすでに別の得意先に登録されています。");
-            if ($cnt != 0) throw new Exception("電話番号[$tel]はすでに別の得意先に登録されています。");
+            if ($cnt != 0) throw new Exception("代表番号[$tel]はすでに別の得意先に登録されています。");
+
+            //Update tokuisaki_tel 代表フラグ to 0
+            $sql = "UPDATE m_tokuisaki_tel SET daihyo = '0' WHERE tokuisaki_cd = :tokuisaki_cd;";
+            $sth = $dbh->prepare($sql);
+            $params = array();
+            $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
+            $sth->execute($params);
+
+            // if ($_REQUEST["tokuisaki_fax"] !== "") {
+            //     $tel = $_REQUEST["tokuisaki_fax"];
+            //     $params["tel_no"] = $tel;
+            //     $chk_sth = $dbh->prepare($sql);
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+
+            //     if ($cnt != 0) throw new Exception("FAX番号[$tel]はすでに別の得意先の代表番号に登録されています。");
+            // }
+
+            // if ($_REQUEST["fuzai_contact"] !== "") {
+            //     $tel = $_REQUEST["fuzai_contact"];
+            //     $params["tel_no"] = $tel;
+            //     $chk_sth = $dbh->prepare($sql);
+            //     $chk_sth->execute($params);
+            //     $cnt = $chk_sth->fetchColumn();
+
+            //     if ($cnt != 0) throw new Exception("予備連絡[$tel]はすでに別の得意先の代表番号に登録されています。");
+            // }
 
             //TOKUISAKI TEL INSERT
             //得意先電話番号を登録
             $sql = "INSERT INTO m_tokuisaki_tel(
                             tokuisaki_cd
                             ,tel_no
+                            ,daihyo
                             , entry_date
                             , update_date
                             )VALUES(
                             :tokuisaki_cd
                             ,:tel_no
+                            ,:daihyo
                             , CURRENT_TIMESTAMP
                             , CURRENT_TIMESTAMP)";
 
@@ -3595,32 +3763,42 @@ try {
             $params = array();
             $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
             $params["tel_no"] = $_REQUEST["tokuisaki_tel"];
+            $params["daihyo"] = '1';
             $insert_sth->execute($params);
 
-            if ($_REQUEST["tokuisaki_fax"] !== "") {
+            if (
+                $_REQUEST["tokuisaki_fax"] !== "" &&
+                $_REQUEST["tokuisaki_fax"] !== $_REQUEST["tokuisaki_tel"]
+            ) {
+                // $params = array();
+                // $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
+                // $chk_sth->execute($params);
+                // $cnt = $chk_sth->fetchColumn();
+                // if ($cnt === 0) {
                 $params = array();
+                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
                 $params["tel_no"] = $_REQUEST["tokuisaki_fax"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $params = array();
-                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                    $params["tel_no"]       = $_REQUEST["tokuisaki_fax"];
-                    $insert_sth->execute($params);
-                }
+                $params["daihyo"] = '0';
+                $insert_sth->execute($params);
+                //}
             };
 
-            if ($_REQUEST["fuzai_contact"] !== "") {
+            if (
+                $_REQUEST["fuzai_contact"] !== "" &&
+                $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_fax"] &&
+                $_REQUEST["fuzai_contact"] !== $_REQUEST["tokuisaki_tel"]
+            ) {
+                // $params = array();
+                // $params["tel_no"] = $_REQUEST["fuzai_contact"];
+                // $chk_sth->execute($params);
+                // $cnt = $chk_sth->fetchColumn();
+                // if ($cnt === 0) {
                 $params = array();
+                $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
                 $params["tel_no"] = $_REQUEST["fuzai_contact"];
-                $chk_sth->execute($params);
-                $cnt = $chk_sth->fetchColumn();
-                if ($cnt === 0) {
-                    $params = array();
-                    $params["tokuisaki_cd"] = $_REQUEST["tokuisaki_cd"];
-                    $params["tel_no"]       = $_REQUEST["fuzai_contact"];
-                    $insert_sth->execute($params);
-                }
+                $params["daihyo"] = '0';
+                $insert_sth->execute($params);
+                //}
             };
 
             //TOKUISAKI UPDATE
@@ -3806,11 +3984,12 @@ try {
             $params = array();
             for ($i = 0; $i < count($rows); $i++) {
                 $chk = null;
+                $product = $rows[$i]["product_cd"];
                 $params["product_cd"] = $rows[$i]["product_cd"];
                 $sth->execute($params);
                 $chk = $sth->fetchColumn();
 
-                if (empty($chk)) throw new Exception("商品マスタに無いコードが入力されています。");
+                if (empty($chk)) throw new Exception("商品マスタに無いコード[$product]が入力されています。");
             };
 
             //DELETE ALL CURRENT MESAI ROWS
@@ -4649,36 +4828,57 @@ try {
             $_SESSION['created'] = time();
 
             //得意先別
+            // $tokuisaki_sql = "SELECT
+            //                     sale_dt
+            //                     , SUM(qty) AS qty
+            //                     , SUM(cost) AS cost
+            //                     , SUM(unit_cost) AS unit_cost
+            //                     , SUM(cost) - SUM(unit_cost) AS total
+            //                     FROM
+            //                     (
+            //                         SELECT
+            //                             TO_CHAR(h.sale_dt,'YYYY/MM/DD') as sale_dt
+            //                             , SUM(CAST(d.qty AS DECIMAL)) as qty
+            //                             , SUM(CAST(d.total_cost AS DECIMAL)) as cost
+            //                             , SUM(CAST(d.qty AS DECIMAL) * CAST(s.unit_price AS DECIMAL)) as unit_cost
+            //                         FROM t_sale_h h
+            //                         LEFT JOIN t_sale_d d ON h.order_no = d.order_no
+            //                         LEFT JOIN m_shohin s ON d.product_cd = s.product_cd
+            //                         WHERE 1=1";
             $tokuisaki_sql = "SELECT
-                                sale_dt
-                                , SUM(qty) AS qty
-                                , SUM(cost) AS cost
-                                , SUM(unit_cost) AS unit_cost
-                                , SUM(cost) - SUM(unit_cost) AS total
-                                FROM
-                                (
-                                    SELECT
-                                        TO_CHAR(h.sale_dt,'YYYY/MM/DD') as sale_dt
-                                        , SUM(CAST(d.qty AS DECIMAL)) as qty
-                                        , SUM(CAST(d.total_cost AS DECIMAL)) as cost
-                                        , SUM(CAST(d.qty AS DECIMAL) * CAST(s.unit_price AS DECIMAL)) as unit_cost
-                                    FROM t_sale_h h
-                                    LEFT JOIN t_sale_d d ON h.order_no = d.order_no
-                                    LEFT JOIN m_shohin s ON d.product_cd = s.product_cd
-                                    WHERE 1=1";
-            $tokuisaki_group = " GROUP BY h.order_no) sub GROUP BY sale_dt ORDER BY sale_dt;";
+                                TO_CHAR(h.sale_dt,'YYYY/MM/DD') as sale_dt
+                                , SUM(CAST(d.qty AS DECIMAL)) as qty
+                                , SUM(CAST(d.total_cost AS DECIMAL)) as cost
+                                , SUM(CAST(d.qty AS DECIMAL) * CAST(s.unit_price AS DECIMAL)) as unit_cost
+                                , SUM(CAST(d.total_cost AS DECIMAL)) - (SUM(CAST(d.qty AS DECIMAL) * CAST(s.unit_price AS DECIMAL))) AS total
+                                FROM ((t_sale_h h INNER JOIN t_sale_d d ON h.order_no = d.order_no)
+                                INNER JOIN m_tokuisaki t ON h.tokuisaki_cd = t.tokuisaki_cd)
+                                INNER JOIN m_shohin s ON d.product_cd = s.product_cd
+                                WHERE 1=1";
+            //$tokuisaki_group = " GROUP BY h.order_no) sub GROUP BY sale_dt ORDER BY sale_dt;";
+            $tokuisaki_group = " GROUP BY h.sale_dt ORDER BY sale_dt;";
 
             //商品別                            
+            // $product_sql = "SELECT
+            //                     d.product_cd
+            //                     , s.product_nm
+            //                     , SUM(CAST(d.qty AS DECIMAL)) as qty
+            //                     , SUM(CAST(d.total_cost AS DECIMAL)) as cost
+            //                     FROM t_sale_h h
+            //                     LEFT JOIN t_sale_d d ON h.order_no = d.order_no
+            //                     LEFT JOIN m_shohin s ON d.product_cd = s.product_cd
+            //                     WHERE 1=1";
+            // $product_group = " GROUP BY d.product_cd , s.product_nm ORDER BY d.product_cd";
             $product_sql = "SELECT
                                 d.product_cd
                                 , s.product_nm
                                 , SUM(CAST(d.qty AS DECIMAL)) as qty
                                 , SUM(CAST(d.total_cost AS DECIMAL)) as cost
-                                FROM t_sale_h h
-                                LEFT JOIN t_sale_d d ON h.order_no = d.order_no
-                                LEFT JOIN m_shohin s ON d.product_cd = s.product_cd
+                                FROM (t_sale_h h
+                                INNER JOIN t_sale_d d ON h.order_no = d.order_no)
+                                INNER JOIN m_shohin s ON d.product_cd = s.product_cd
                                 WHERE 1=1";
-            $product_group = " GROUP BY d.product_cd , s.product_nm ORDER BY d.product_cd";
+            $product_group = " GROUP BY d.product_cd, s.product_nm ORDER BY cost DESC, d.product_cd";
 
             $whr = "";
             $params = array();
@@ -4867,24 +5067,51 @@ try {
             $data = $sth->fetchAll(PDO::FETCH_ASSOC);
 
             //2) create PDF
-            $fname = TEMP_FOLDER . "statementOfDelivery_" . uniqid(mt_rand(), true) . PDF;
+            // $fname = TEMP_FOLDER . "statementOfDelivery_" . uniqid(mt_rand(), true) . PDF;
 
-            statementOfDelivery($fname, $data, date("Y年m月d日", strtotime($_REQUEST["shuka_dt"])));
+            // statementOfDelivery($fname, $data, date("Y年m月d日", strtotime($_REQUEST["shuka_dt"])));
 
-            //3) send pdf blob
-            header('Content-Type: application/pdf');
-            header('Content-Disposition: attachment; filename="statementOfDelivery.pdf"');
-            header('Content-Length: ' . filesize($fname));
-            readfile($fname);
-            unlink($fname);
+            // //3) send pdf blob
+            // header('Content-Type: application/pdf');
+            // header('Content-Disposition: attachment; filename="statementOfDelivery.pdf"');
+            // header('Content-Length: ' . filesize($fname));
+            // readfile($fname);
+            // unlink($fname);
 
             $dbh->commit();
+
+            echo json_encode("OK", JSON_UNESCAPED_UNICODE);
             break;
 
             /** 出荷日報 **/
         case "shukaReportData":
             session_start();
             $_SESSION['created'] = time();
+
+            //GET 荷物受渡書 DATA
+            $sql = "SELECT
+                        COUNT(inquire_no) as shuka_cnt,
+                        SUM(CAST(kosu AS INTEGER)) AS kosu_total,
+                        (SELECT kanri_cd FROM m_code WHERE kanri_key = 'ninushi.code') AS ninushi_cd
+                        FROM t_sale_h
+                        WHERE shuka_print_dt = :shuka_dt
+                        AND sender_cd = :customer_cd";
+
+            $whr = "";
+            $params = array();
+            $params["customer_cd"]  = $_REQUEST["customer_cd"];
+            $params["shuka_dt"]     = $_REQUEST["shuka_dt"];
+
+            if ($_REQUEST["shuka_print_qty"] > 0) {
+                $whr = " AND shuka_print_qty = :shuka_print_qty";
+                $params["shuka_print_qty"]  = $_REQUEST["shuka_print_qty"];
+            };
+
+            $sql .= $whr;
+
+            $sth = $dbh->prepare($sql);
+            $sth->execute($params);
+            $top_pg = $sth->fetchAll(PDO::FETCH_ASSOC);
 
             //GET 出荷日報 DATA
             $sql = "SELECT
@@ -4919,12 +5146,12 @@ try {
             //GET 明細 DATA
             $sql = "SELECT 
                     d.order_no AS order_no
-                    ,s.product_nm_abrv AS product_nm
+                    , d.product_nm AS product_nm
                     , c.kanri_nm AS tani
                     , d.qty AS qty
                     FROM t_sale_d d 
-                    LEFT JOIN m_shohin s ON d.product_cd = s.product_cd
-                    LEFT JOIN m_code c ON s.sale_tani = c.kanri_cd AND c.kanri_key = 'sale.tani'
+                    INNER JOIN m_shohin s ON d.product_cd = s.product_cd
+                    INNER JOIN m_code c ON s.sale_tani = c.kanri_cd AND c.kanri_key = 'sale.tani'
                     WHERE order_no IN (";
             $whr = "";
             for ($i = 0; $i < count($order_data); $i++) {
@@ -4941,7 +5168,8 @@ try {
 
             //2) create PDF
             $fname = TEMP_FOLDER . "shukaReportData_" . uniqid(mt_rand(), true) . PDF;
-            shukaReportData($fname, $order_data, $product_data, date("Y年m月d日", strtotime($_REQUEST["shuka_dt"])));
+           // shukaReportData($fname, $order_data, $product_data, date("Y年m月d日", strtotime($_REQUEST["shuka_dt"])));
+            shukaReportDataTest($fname, $order_data, $product_data, date("Y年m月d日", strtotime($_REQUEST["shuka_dt"])), $top_pg, $params["customer_cd"]);
 
             //3) send pdf blob
             header('Content-Type: application/pdf');
@@ -5802,7 +6030,7 @@ try {
                         , TO_CHAR(h.sale_dt, 'MM/DD') AS sale_dt
                         , TO_CHAR(h.receive_dt, 'MM/DD') AS receive_dt
                         , TO_CHAR(h.receive_dt, 'YYYY/MM/DD') AS nohin_dt
-                        , s.product_nm AS product_nm
+                        , COALESCE(s.product_nm, d.product_nm) AS product_nm
                         , d.qty AS qty
                         , s.sale_price AS sale_price
                         , d.total_cost AS row_cost
@@ -5829,7 +6057,8 @@ try {
             if ($_REQUEST["tokuisaki_tel"] != "") {
                 $params["tokuisaki_tel"] = $_REQUEST["tokuisaki_tel"];
                 //$sql .= " AND tel.tel_no = :tokuisaki_tel";
-                $sql .= " AND t.tokuisaki_cd IN (SELECT tel.tokuisaki_cd FROM m_tokuisaki_tel tel WHERE tel.tel_no = :tokuisaki_tel)";
+                //$sql .= " AND t.tokuisaki_cd IN (SELECT tel.tokuisaki_cd FROM m_tokuisaki_tel tel WHERE tel.tel_no = :tokuisaki_tel)";
+                $sql .= " AND t.tokuisaki_tel = :tokuisaki_tel";
             };
 
             //$sql .= " ORDER BY receive_dt, h.order_no, t.tokuisaki_cd, s.product_cd";
@@ -5872,7 +6101,7 @@ try {
                         , TO_CHAR(h.sale_dt, 'MM/DD') AS sale_dt
                         , TO_CHAR(h.receive_dt, 'MM/DD') AS receive_dt
                         , TO_CHAR(h.receive_dt, 'YYYY/MM/DD') AS nohin_dt
-                        , s.product_nm AS product_nm
+                        , COALESCE(s.product_nm, d.product_nm) AS product_nm
                         , d.qty AS qty
                         , s.sale_price AS sale_price
                         , d.total_cost AS row_cost

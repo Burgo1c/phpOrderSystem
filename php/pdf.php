@@ -988,33 +988,6 @@ class orderPDF extends TCPDF
     {
         // Position at 60 mm from bottom
         $this->SetY(-60);
-        // Set font
-        // $this->SetFont('kozgopromedium', '', 10);
-        // // Page number
-        // $this->Cell(65, 10, "　希望配達日", "LTR", false, 'L', 0, '', 0, false, 'T', 'M');
-
-        // $this->Cell(0, 10, "    ご希望の方は、お届け時間帯に☑をしてください。", 0, 1, 'L', 0, '', 0, false, 'T', 'M');
-
-        // $this->Cell(65, 10, "月 　       　日　", "LBR", false, 'R', 0, '', 0, false, 'T', 'M');
-
-        // $this->Cell(1, 10, "");
-
-        // $this->Cell(60, 10, "□　　　午前中", 1, 1, 'C', 0, '', 0, false, 'T', 'M');
-
-        // $this->MultiCell(66, 10, "・地震・天候・交通事情によりご希望に添えない場合がございます。", 0, "J", false, 0, null, null, true, 1);
-
-        // $this->Cell(30, 10, "□14時▶16時", "LB", 0, 'C', 0, '', 0, false, 'T', 'M');
-        // $this->Cell(30, 10, "□16時▶18時", "LBR", 0, 'C', 0, '', 0, false, 'T', 'M');
-
-        // $this->MultiCell(0, 10, "東北、九州エリアへの翌日配達は14時(一部は18時)より可能です。", "LTR", "J", false, 1, null, null, true, 1);
-
-        // $this->MultiCell(66, 10, "・急激な相場変動により、価格が予告なしに変動する場合がございます。", 0, "J", false, 0, null, null, true, 1);
-
-        // $this->Cell(30, 10, "□18時▶20時", "LB", 0, 'C', 0, '', 0, false, 'T', 'M');
-        // $this->Cell(30, 10, "□19時▶21時", "LBR", 0, 'C', 0, '', 0, false, 'T', 'M');
-
-        // $this->Cell(00, 10, "", "LBR", 1, 'C', 0, '', 0, false, 'T', 'M');
-
         $this->Image('../images/footer.jpg', 9, 241, 192, 50, 'JPG', 'https://uskk.com/', '', true, 150, '', false, false, 0, false, false, false);
     }
 }
@@ -1736,7 +1709,7 @@ function urikake($fname, $data, $date_from, $date_to)
                 where tokuisaki_cd = :tokuisaki_cd
                 AND sale_dt >= :dt_from 
                 AND sale_dt <= :dt_to;";
-                
+
         $sth = $dbh->prepare($sql);
 
         $cnt = count($data);
@@ -1898,7 +1871,7 @@ function invoice($fname, $data, $bank_info, $dt_from, $dt_to)
 
             $y++;
 
-            if ($y != 0 && ($y % 13) == 0) {
+            if ($y != 0 && ($y % 12) == 0) {
                 $pdf->AddPage();
                 $pdf->setY(90);
             }
@@ -2224,7 +2197,7 @@ function A3Denpyo($fname, $data)
 
                     //top
                     $pdf->SetFont('kozgopromedium', '', 9);
-                    $pdf->MultiCell(70, 5, $data[0]["tokuisaki_nm"] . "　様", 0, "L", false, 0, 320, 165);
+                    $pdf->MultiCell(55, 5, $data[0]["tokuisaki_nm"] . "　様", 0, "L", false, 0, 320, 165, true, 0, false, true, 5, 'T', true);
                     $pdf->MultiCell(55, 5, $data[0]["tokuisaki_adr_1"] . $data[0]["tokuisaki_adr_2"] . $data[0]["tokuisaki_adr_3"], 0, "L", false, 0, 320, 170);
                     //$pdf->MultiCell(55, 5, $data[0]["tokuisaki_adr_3"], 0, "L", false, 0, 320, 175);
                     $pdf->MultiCell(60, 5, "TEL：" . substr($data[0]["tokuisaki_tel"], 0, 3) . '-' . substr($data[0]["tokuisaki_tel"], 3, 3) . '-' . substr($data[0]["tokuisaki_tel"], 6), 0, "L", false, 0, 320, 182);
@@ -2340,7 +2313,7 @@ function A3Denpyo($fname, $data)
 
                     //top
                     $pdf->SetFont('kozgopromedium', '', 9);
-                    $pdf->MultiCell(70, 5, $data[0]["tokuisaki_nm"] . "　様", 0, "L", false, 0, 320, 165);
+                    $pdf->MultiCell(55, 5, $data[0]["tokuisaki_nm"] . "　様", 0, "L", false, 0, 320, 165, true, 0, false, true, 5, 'T', true);
                     $pdf->MultiCell(55, 5, $data[0]["tokuisaki_adr_1"] . $data[0]["tokuisaki_adr_2"] . $data[0]["tokuisaki_adr_3"], 0, "L", false, 0, 320, 170);
                     //$pdf->MultiCell(55, 5, $data[0]["tokuisaki_adr_3"], 0, "L", false, 0, 320, 175);
                     $pdf->MultiCell(60, 5, "TEL：" . substr($data[0]["tokuisaki_tel"], 0, 3) . '-' . substr($data[0]["tokuisaki_tel"], 3, 3) . '-' . substr($data[0]["tokuisaki_tel"], 6), 0, "L", false, 0, 320, 182);
@@ -2461,39 +2434,44 @@ function A3Denpyo($fname, $data)
                     $pdf->SetFont('msmincho', '', 20);
                     $pdf->MultiCell(50, 10, "領収書", 'B', 'C', false, 0, 240, 160, true, 4);
                     //$pdf->SetFont('kozgopromedium');
-                    $pdf->MultiCell(90, 15, "￥" . number_format($data[0]["grand_total"]), 1, "C", false, 0, 220, 180, true, 0, false, true, 15, 'M');
                     $pdf->setFontSize(10);
+                    $pdf->MultiCell(40, 5, date("Y/m/d", strtotime($data[0]["sale_dt"])), 0, 'L', false, 0, 290, 172);
 
+                    $pdf->MultiCell(90, 6, $data[0]["tokuisaki_nm"] . "　様", 0, 'L', false, 0, 220, 177, true, 0, false, true, 6, 'T', true);
+
+                    $pdf->setFontSize(20);
+                    $pdf->MultiCell(90, 15, "￥" . number_format($data[0]["grand_total"]), 1, "C", false, 0, 220, 184, true, 0, false, true, 15, 'M');
+
+                    $pdf->setFontSize(10);
                     // $pdf->MultiCell(40, 5, "受注日：" . date("Y/m/d", strtotime($data[0]["sale_dt"])), 0, 'L', false, 0, 270, 175);
-                    $pdf->MultiCell(40, 5, date("Y/m/d", strtotime($data[0]["receive_dt"])), 0, 'L', false, 0, 285, 172);
-                    $pdf->MultiCell(90, 5, "上記の金額を正に領収いたしました。", 0, "C", false, 0, 220, 196);
+                    $pdf->MultiCell(90, 5, "上記の金額を正に領収いたしました。", 0, "C", false, 0, 220, 200);
 
                     //LOGO
-                    $pdf->Image('../images/logo_pdf.jpg', 245, 205, 40, 8, 'JPG', 'https://uskk.com/', '', true, 150, '', false, false, 0, false, false, false);
+                    $pdf->Image('../images/logo_pdf.jpg', 245, 209, 40, 8, 'JPG', 'https://uskk.com/', '', true, 150, '', false, false, 0, false, false, false);
 
                     $pdf->setFontSize(8);
-                    $pdf->MultiCell(15, 15, "", 1, 'C', false, 0, 220, 210, true, 0, false, true, 15, 'T');
-                    $pdf->MultiCell(15, 5, "収　入", 0, 'C', false, 0, 220, 212, true, 0);
-                    $pdf->MultiCell(15, 15, "", 0, 'C', false, 0, 220, 213, true, 0, false, true, 15, 'B');
-                    $pdf->MultiCell(15, 5, "印　紙", 0, 'C', false, 0, 220, 218, true, 0);
+                    $pdf->MultiCell(15, 15, "", 1, 'C', false, 0, 220, 214, true, 0, false, true, 15, 'T');
+                    $pdf->MultiCell(15, 5, "収　入", 0, 'C', false, 0, 220, 216, true, 0);
+                    $pdf->MultiCell(15, 15, "", 0, 'C', false, 0, 220, 217, true, 0, false, true, 15, 'B');
+                    $pdf->MultiCell(15, 5, "印　紙", 0, 'C', false, 0, 220, 222, true, 0);
 
-                    $pdf->MultiCell(15, 5, "取扱者印", 'B', 'C', false, 0, 295, 210, true, 0);
-                    $pdf->MultiCell(15, 20, "", 1, 'C', false, 0, 295, 210, true, 0);
+                    $pdf->MultiCell(15, 5, "取扱者印", 'B', 'C', false, 0, 295, 214, true, 0);
+                    $pdf->MultiCell(15, 20, "", 1, 'C', false, 0, 295, 214, true, 0);
 
                     // $pdf->setFontSize(10);
-                    $pdf->MultiCell(60, 5, ADDRESS, 0, 'C', false, 0, 235, 215, true, 0);
-                    $pdf->MultiCell(60, 5, "TEL：" . TEL . "　FAX：" . FAX, 0, 'C', false, 0, 235, 220, true, 0);
+                    $pdf->MultiCell(60, 5, ADDRESS, 0, 'C', false, 0, 235, 219, true, 0);
+                    $pdf->MultiCell(60, 5, "TEL：" . TEL . "　FAX：" . FAX, 0, 'C', false, 0, 235, 224, true, 0);
                     $pdf->setFontSize(10);
-                    $pdf->MultiCell(60, 5, COMPANY, 0, 'C', false, 0, 235, 225, true, 0);
-                    $pdf->MultiCell(60, 5, "登録番号：" . REGISTER_NO, 0, 'C', false, 0, 235, 230, true, 0);
+                    $pdf->MultiCell(60, 5, COMPANY, 0, 'C', false, 0, 235, 229, true, 0);
+                    $pdf->MultiCell(60, 5, "登録番号：" . REGISTER_NO, 0, 'C', false, 0, 235, 234, true, 0);
 
                     $pdf->setFontSize(8);
-                    $pdf->MultiCell(95, 5, "尚、代金引換の場合は運送会社の控えが領収書としてお使い頂けます。", 0, 'C', false, 0, 218, 237, true, 0);
+                    $pdf->MultiCell(95, 5, "尚、代金引換の場合は運送会社の控えが領収書としてお使い頂けます。", 0, 'C', false, 0, 218, 241, true, 0);
                 }
             }
             $pdf->SetFont('kozgopromedium', '', 9);
 
-            $product_nm = $data[$i]["product_nm"];
+            $product_nm = $data[$i]["product_nm"] ?? $data[$i]["product_nm_abrv"];
             $product_nm_abrv = $data[$i]["product_nm_abrv"];
             $tax_mark = "";
             if (in_array($data[$i]["tax_kbn"], REDUCE_TAX_RATE)) {
@@ -2506,7 +2484,7 @@ function A3Denpyo($fname, $data)
             $pdf->SetFont('kozgopromedium', '', 10);
             //$pdf->SetFont('msmincho', '', 10);
             $pdf->setCellPaddings(null, null, null);
-            if ($data[$i]["product_disp_kbn"] == "1") {
+            if ($data[$i]["product_disp_kbn"] == "1" && $data[$i]["haiban_kbn"] == "0") {
                 $pdf->MultiCell(90, 10, $data[$i]["product_cd"] . " " . $data[$i]["product_nm"], 0, "L", false, 0, 10, $order_y, true, 0, false, true, 10, "M");
                 $pdf->setCellPaddings(null, null, 2);
                 // $pdf->MultiCell(25, 10, "¥" . number_format($i * 100), 0, "R", false, 0, 100, $order_y, true, 0, false, true, 10, "M");
@@ -2910,37 +2888,41 @@ function reciept($fname, $data)
 
         $pdf->MultiCell(70, 10, "領収書", "B", "C", false, 0, 39.25, null, true, 4);
 
-
-        $pdf->MultiCell(90, 15, "￥" . number_format($data[0]["grand_total"]), 1, "C", false, 0, 29.25, 30, true, 0, false, true, 15, 'M');
         $pdf->SetFont('msmincho', '', 10);
 
-        //$pdf->MultiCell(40, 5, "受注日：" . date("Y/m/d", strtotime($data[0]["sale_dt"])), 0, "L", false, 0, 84, 24);
+        $pdf->MultiCell(40, 5, date("Y/m/d", strtotime($data[0]["sale_dt"])), 0, "L", false, 0, 100, 22);
 
-        $pdf->MultiCell(40, 5, date("Y/m/d", strtotime($data[0]["receive_dt"])), 0, "L", false, 0, 90, 23);
+        $pdf->SetFont('msmincho', '', 12);
 
-        $pdf->MultiCell(90, 10, "上記の金額を正に領収いたしました。", 0, "C", false, 0, 29.25, 50);
+        $pdf->MultiCell(90, 6, $data[0]["okurisaki_nm"] . "　様", 0, "L", false, 0, 30, 27, true, 0, false, true, 6, 'T', true);
 
-        $pdf->MultiCell(15, 15, "", 1, "C", false, 0, 29.25, 64);
+        $pdf->SetFont('msmincho', '', 18);
+        $pdf->MultiCell(90, 15, "￥" . number_format($data[0]["grand_total"]), 1, "C", false, 0, 29.25, 35, true, 0, false, true, 15, 'M');
+
+        $pdf->SetFont('msmincho', '', 10);
+        $pdf->MultiCell(90, 10, "上記の金額を正に領収いたしました。", 0, "C", false, 0, 29.25, 52);
+
+        $pdf->MultiCell(15, 15, "", 1, "C", false, 0, 29.25, 66);
 
         $pdf->SetFont('msmincho', '', 8);
-        $pdf->MultiCell(15, 5, "収　入", 0, "C", false, 0, 29.25, 66);
-        $pdf->MultiCell(15, 5, "印　紙", 0, "C", false, 0, 29.25, 73);
+        $pdf->MultiCell(15, 5, "収　入", 0, "C", false, 0, 29.25, 68);
+        $pdf->MultiCell(15, 5, "印　紙", 0, "C", false, 0, 29.25, 77);
 
-        $pdf->MultiCell(15, 5, "取扱者印", 1, "C", false, 0, 103, 64);
-        $pdf->MultiCell(15, 12, "", "LBR", "C", false, 0, 103, 69);
+        $pdf->MultiCell(15, 5, "取扱者印", 1, "C", false, 0, 103, 66);
+        $pdf->MultiCell(15, 12, "", "LBR", "C", false, 0, 103, 71);
 
         //LOGO
-        $pdf->Image('../images/logo_pdf.jpg', 50, 58, 48, 9, 'JPG', 'https://uskk.com/', '', true, 150, '', false, false, 0, false, false, false);
+        $pdf->Image('../images/logo_pdf.jpg', 50, 60, 48, 9, 'JPG', 'https://uskk.com/', '', true, 150, '', false, false, 0, false, false, false);
 
         //INFO
-        $pdf->MultiCell(80, 5, ADDRESS, 0, "C", false, 0, 34.25, 70);
-        $pdf->MultiCell(40, 5, "TEL : " . TEL, 0, "C", false, 0, 39.25, 74);
+        $pdf->MultiCell(80, 5, ADDRESS, 0, "C", false, 0, 34.25, 72);
+        $pdf->MultiCell(40, 5, "TEL : " . TEL, 0, "C", false, 0, 39.25, 76);
 
-        $pdf->MultiCell(40, 5, "FAX : " . FAX, 0, "C", false, 0, 68.25, 74);
-        $pdf->MultiCell(80, 5, COMPANY, 0, "C", false, 0, 34.25, 78);
-        $pdf->MultiCell(80, 5, "登録番号：" . REGISTER_NO, 0, "C", false, 0, 34.25, 82);
+        $pdf->MultiCell(40, 5, "FAX : " . FAX, 0, "C", false, 0, 68.25, 76);
+        $pdf->MultiCell(80, 5, COMPANY, 0, "C", false, 0, 34.25, 80);
+        $pdf->MultiCell(80, 5, "登録番号：" . REGISTER_NO, 0, "C", false, 0, 34.25, 84);
 
-        $pdf->MultiCell(100, 10, "尚、代金引換の場合は運送会社の控えが領収書としてお使い頂けます。", 0, "C", false, 0, 24.25, 88);
+        $pdf->MultiCell(100, 10, "尚、代金引換の場合は運送会社の控えが領収書としてお使い頂けます。", 0, "C", false, 0, 24.25, 90);
         $pdf->Output($fname, "F");
     } catch (Exception $e) {
         throw $e;
@@ -3112,7 +3094,7 @@ function yamatoDaibiki($fname, $data)
         $product = "";
         foreach ($data as &$obj) {
             //if ($pCnt == 7) break;
-            if ($obj["product_disp_kbn"] != "1") continue;
+            //if ($obj["product_disp_kbn"] != "1") continue;
             $sale_tani = $obj["sale_tani"];
             if ($sale_tani == "なし") {
                 $sale_tani = "";
@@ -3351,7 +3333,7 @@ function yamatoMotoBarai($fname, $data)
             foreach ($data as &$obj) {
                 //if ($pCnt == 7) break;
                 //発行フラグ is 発行しない Go next
-                if ($obj["product_disp_kbn"] != "1") continue;
+                //if ($obj["product_disp_kbn"] != "1") continue;
                 $sale_tani = $obj["sale_tani"];
                 if ($sale_tani == "なし") {
                     $sale_tani = "";
@@ -3597,7 +3579,7 @@ function yamatoDaibikiMotoBarai($fname, $data)
             foreach ($data as &$obj) {
                 //if ($pCnt == 7) break;
                 //発行フラグ is 発行しない Go next
-                if ($obj["product_disp_kbn"] != "1") continue;
+                //if ($obj["product_disp_kbn"] != "1") continue;
                 $sale_tani = $obj["sale_tani"];
                 if ($sale_tani == "なし") {
                     $sale_tani = "";
@@ -3829,15 +3811,6 @@ function sagawa_ship_invoice($fname, $data)
     }
 }
 
-// function sagawa()
-// {
-//     try {
-//     } catch (Exception $e) {
-//         // throw $e;
-//         var_dump($e);
-//     }
-// }
-
 /**
  * 荷物受渡書
  */
@@ -3911,104 +3884,6 @@ function statementOfDelivery($fname, $data, $shuka_dt)
         throw $e;
     }
 }
-
-
-/**
- * 出荷日報
- */
-// function shukaReportData($fname, $data, $mesai, $shuka_dt)
-// {
-//     try {
-//         $cnt = count($data);
-//         $kosu = count($mesai);
-//         // $mesai_cnt = count($mesai);
-
-//         $date_from =  $data[0]["shuka_dt"];
-//         $date_to = $data[$cnt - 1]["shuka_dt"];
-
-//         $pdf = new TCPDF('P', 'mm');
-
-//         $pdf->SetCreator("株式会社ロジ・グレス");
-//         $pdf->SetAuthor("株式会社ロジ・グレス");
-//         $pdf->SetTitle('出荷日報');
-//         $pdf->SetSubject('出荷日報');
-//         $pdf->SetHeaderMargin(0);
-//         $pdf->setFooterMargin(10);
-//         $pdf->setAutoPageBreak(true, 10);
-//         $pdf->setPrintHeader(false);
-//         $pdf->setPrintFooter(false);
-
-//         $pdf->AddPage();
-//         $pdf->SetFont('kozgopromedium');
-
-//         $pdf->MultiCell(80, 10, "出荷日：" . $date_from . " ～ " . $date_to, 0, 'L', false, 0, 10, 10);
-
-//         $pdf->MultiCell(60, 10, "指定日：" . $shuka_dt, 0, 'R', false, 0, 140, 10);
-
-//         $pdf->MultiCell(60, 10, $pdf->getAliasNumPage() . ' ／ ' . $pdf->getAliasNbPages() . " ページ", 0, 'R', false, 0, 145, 18);
-
-//         //TITLE
-//         $pdf->setFontSize(18);
-//         $pdf->MultiCell(70, 12, "出荷日報", 0, 'C', false, 0, 70, 25, true, 0, false, true, 12, 'M');
-
-//         //出荷日
-//         $pdf->setFontSize(12);
-//         $pdf->MultiCell(60, 10, "◆出荷日：" . $date_to, 0, 'L', false, 0, 10, 45);
-//         //NAME
-//         $pdf->MultiCell(null, 10, "荷送人：　" . COMPANY, "B", 'L', false, 0, 10, 52);
-
-//         $pdf->MultiCell(60, 10, "ご依頼主", 0, 'L', false, 0, 10, 65);
-//         $pdf->MultiCell(60, 10, "お届け先名", 0, 'L', false, 0, 22, 72);
-//         $pdf->MultiCell(60, 10, "商品明細", 0, 'R', false, 1, 10, 78);
-//         $pdf->MultiCell(null, 6, "個数", "B", 'R', false, 1, 10, 78);
-//         $pdf->MultiCell(null, 2, "", 0, 'L', false, 1);
-//         for ($r = 0; $r < $cnt; $r++) {
-//             $order_no = $data[$r]["order_no"];
-
-//             $pdf->setFontSize(12);
-//             //TEL
-//             $pdf->Cell(40, 5, $data[$r]["tokuisaki_tel"]);
-//             //NAME
-//             $pdf->Cell(null, 5, $data[$r]["tokuisaki_nm"], 0, 1);
-//             $pdf->Cell(null, 5, "", 0, 1);
-//             //問い合わせ番号
-//             $pdf->MultiCell(60, 8, "問合番号：" . $data[$r]["inquire_no"], 0, 'L', false, 0, 20);
-//             //受注番号
-//             $pdf->MultiCell(60, 8, "受注番号：" . $order_no, 0, 'L', false, 1, 80);
-//             //ADDRESS
-//             $pdf->MultiCell(80, 6, $data[$r]["address"], 0, 'L', false, 0, 20);
-//             //金額
-//             $pdf->MultiCell(60, 6, "代引金額：" . number_format($data[$r]["grand_total"]), 0, 'L', false, 1, 140);
-//             //ADDRESS
-//             $pdf->MultiCell(80, 10, $data[$r]["building"], 0, 'L', false, 0, 20);
-//             //個数
-//             $pdf->MultiCell(10, 10, $data[$r]["kosu"], 0, 'L', false, 1, 190);
-
-//             //PRODUCT LIST
-//             $pdf->setFontSize(10);
-//             foreach ($mesai as &$obj) {
-//                 if ($obj["order_no"] == $order_no) {
-//                     //商品名
-//                     $pdf->MultiCell(100, 6, $obj["product_nm"], 0, 'L', false, 0, 15);
-//                     //単位
-//                     $pdf->MultiCell(50, 6, $obj["qty"] . "　" . $obj["tani"], 0, 'L', false, 1, 115);
-//                 };
-//             }
-//             //BOTTOM BORDER
-//             $pdf->MultiCell(null, 6, "", "T", 'L', false, 1);
-//         }
-
-//         $pdf->MultiCell(null, 6, "計　（荷送人）", "B", 'C', false, 0);
-//         $pdf->MultiCell(10, 6, $kosu, 0, 'L', false, 1, 190);
-
-//         $pdf->MultiCell(null, 6, "小計　（出荷日）", 0, 'C', false, 0);
-//         $pdf->MultiCell(10, 6, $kosu, 0, 'L', false, 1, 190);
-
-//         $pdf->Output($fname, "F");
-//     } catch (Exception $e) {
-//         throw $e;
-//     }
-// }
 
 class shukaReportPDF extends TCPDF
 {
@@ -4175,38 +4050,234 @@ function shukaReportData($fname, $data, $mesai, $shuka_dt)
     }
 }
 
+class shukaReportPDFTest extends TCPDF
+{
+    private $first_pg;
+    function setFirstPg($first_pg)
+    {
+        $this->first_pg = $first_pg;
+    }
+    function getFirstPg()
+    {
+        return $this->first_pg;
+    }
 
-// function barcodetest()
-// {
-//     $barcode1 = "123456789";
+    private $date_from;
+    function setDateFrom($dt)
+    {
+        $this->date_from = $dt;
+    }
+    function getDateFrom()
+    {
+        return $this->date_from;
+    }
 
-//     $pageLayout = array(108, 178);
+    private $date_to;
+    function setDateTo($dt)
+    {
+        $this->date_to = $dt;
+    }
+    function getDateTo()
+    {
+        return $this->date_to;
+    }
 
-//     $pdf = new TCPDF('P', 'mm', $pageLayout);
+    private $shuka_dt;
+    function setShukaDt($dt)
+    {
+        $this->shuka_dt = $dt;
+    }
+    function getShukaDt()
+    {
+        return $this->shuka_dt;
+    }
 
-//     $pdf->SetCreator("株式会社ロジ・グレス");
-//     $pdf->SetAuthor("株式会社ロジ・グレス");
-//     $pdf->SetTitle('ヤマト送り状');
-//     $pdf->SetSubject('ヤマト送り状');
-//     $pdf->SetHeaderMargin(0);
-//     $pdf->setFooterMargin(0);
-//     $pdf->setAutoPageBreak(false);
-//     $pdf->setPrintHeader(false);
-//     $pdf->setPrintFooter(false);
+    private $ninushi_cd;
+    function setNinushiCd($cd)
+    {
+        $this->ninushi_cd = $cd;
+    }
+    function getNinushiCd()
+    {
+        return $this->ninushi_cd;
+    }
 
-//     $pdf->AddPage();
+    private $sender_cd;
+    function setSenderCd($cd)
+    {
+        $this->sender_cd = $cd;
+    }
+    function getSenderCd()
+    {
+        return $this->sender_cd;
+    }
 
-//     $pdf->write1DBarcode($barcode1, 'CODABAR', 20, 50, 50, 10, 0.4);
+    private $kensu;
+    function setKensu($kensu)
+    {
+        $this->kensu = $kensu;
+    }
+    function getKensu()
+    {
+        return $this->kensu;
+    }
 
-//     $pdf->Output("barcode_test.pdf", "I");
-// }
-//sagawa();
-//$data = null;
-//    denpyo("denpyo.pdf");
-//invoice("invoice.pdf");
-//urikake("urikake.pdf", $data);
-//tokuisakiDaicho("tokuisaki_daicho.pdf", $data);
-//shukaIrai("TEST.pdf");
+    private $kosu;
+    function setKosu($kosu)
+    {
+        $this->kosu = $kosu;
+    }
+    function getKosu()
+    {
+        return $this->kosu;
+    }
+
+    //Page header
+    public function Header()
+    {
+        if ($this->getFirstPg()) {
+
+            $this->SetFont('kozgopromedium');
+            $this->setFontSize(10);
+            $this->MultiCell(80, 10, "出荷日：" . $this->getDateFrom() . " ～ " . $this->getDateTo(), 0, 'L', false, 0, 10, 20);
+
+            $this->MultiCell(60, 10, "指定日：" . $this->getShukaDt(), 0, 'R', false, 0, 140, 20);
+
+            //TITLE
+            $this->setFontSize(16);
+            $this->setCellPadding(2);
+            $this->MultiCell(70, 12, "荷物受渡書", 1, 'J', false, 0, 70, 40, true, 4, false, true, 12, 'M');
+
+            $this->setCellPadding(null);
+            $this->setFontSize(10);
+            $this->MultiCell(40, 10, $this->getNinushiCd(), 0, 'J', false, 0, 160, 35);
+            $this->setFontSize(12);
+            $this->MultiCell(60, 10, "出荷日：" . date("Y年m月d日"), 0, 'L', false, 0, 10, 60);
+
+            if ($this->getSenderCd() == "1") {
+                //ADDRESS
+                $this->MultiCell(58, null, ADDRESS, 0, 'L', false, 0, 10, 80);
+                //NAME
+                $this->MultiCell(60, 10, POST_COMPANY, 0, 'L', false, 0, 10, 110);
+                //TEL
+                $this->MultiCell(null, 10, "TEL．" . TEL, 'B', 'L', false, 0, 10, 140);
+            } else {
+                $this->MultiCell(60, 10, "その他", 0, 'L', false, 0, 10, 110);
+            }
+
+            $this->MultiCell(10, 10, "様", 0, 'L', false, 0, 140, 120);
+
+            $this->MultiCell(60, 10, "総出荷件数", 0, 'L', false, 0, 10, 160);
+            $this->MultiCell(60, 10, $this->getKensu() . "　件", 0, 'L', false, 0, 80, 160);
+
+            $this->MultiCell(60, 10, "総出荷個数", 0, 'L', false, 0, 10, 170);
+            $this->MultiCell(60, 10, $this->getKosu() . "　個", 0, 'L', false, 0, 80, 170);
+
+            $this->MultiCell(60, 10, "確かにお預かり致しました。", 0, 'L', false, 0, 10, 185);
+
+            $this->setFontSize(10);
+            $this->MultiCell(20, 25, "", 1, 'L', false, 0, 180, 160);
+            $this->MultiCell(20, 5, "受領印", "B", 'C', false, 0, 180, 160);
+
+            $this->MultiCell(null, 10, "", 'B', 'L', false, 0, 10, 200);
+        } else {
+            $this->setFillColor(204, 204, 204);
+            $this->SetFont('kozgopromedium', '', 14);
+            // Title
+            $this->setCellPaddings(null, null, null, 2);
+            $this->Cell(0, 20, '出　荷　日　報', 'B', false, 'C', false, '', 0, false, 'M', 'B');
+
+            $this->SetFont('msmincho', '', 10);
+            $this->setCellPaddings(null, null, null, null);
+            $this->text(10, 10, "出荷日：" . $this->getDateFrom() . " ～ " . $this->getDateTo());
+            $this->text(155, 10, "出力日：" . date("Y年m月d日"));
+        }
+    }
+    public function Footer()
+    {
+        $this->SetFont('msmincho', '', 10);
+        $this->MultiCell(null, 10, $this->getAliasNumPage() . ' ／ ' . $this->getAliasNbPages() . " ページ", 0, 'C', false, 0, 35, -15);
+    }
+};
+function shukaReportDataTest($fname, $data, $mesai, $shuka_dt, $top_pg, $sender_cd)
+{
+    try {
+        $pdf = new shukaReportPDFTest('P', 'mm');
+        $pdf->SetCreator("株式会社ロジ・グレス");
+        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetTitle('出荷日報');
+        $pdf->SetSubject('出荷日報');
+        $pdf->SetHeaderMargin(10);
+        $pdf->setFooterMargin(25);
+        $pdf->setAutoPageBreak(true, 30);
+        $pdf->setPrintHeader(true);
+        $pdf->setPrintFooter(true);
+
+        $cnt = count($data);
+        $pdf->setDateFrom($data[0]["shuka_dt"]);
+        $pdf->setDateTo($data[$cnt - 1]["shuka_dt"]);
+        $pdf->setShukaDt($shuka_dt);
+        $pdf->setNinushiCd($top_pg[0]["ninushi_cd"]);
+        $pdf->setSenderCd($sender_cd);
+        $pdf->setKensu($top_pg[0]["shuka_cnt"]);
+        $pdf->setKosu($top_pg[0]["kosu_total"]);
+        $pdf->setFirstPg(true);
+
+        $pdf->AddPage();
+
+        for ($i = 0; $i < $cnt; $i++) {
+            if ($i == 0) {
+                $pdf->setFirstPg(false);
+                $pdf->AddPage();
+                $pdf->setTopMargin(22);
+            }
+            $order_no = $data[$i]["order_no"];
+            $pdf->SetFont('kozgopromedium', '', 10);
+            //$pdf->Cell(50,5,$data[$i]["tokuisaki_tel"],0,0,'L');
+            $pdf->MultiCell(30, 6, substr($data[$i]["tokuisaki_tel"], 0, 3) . "-" . substr($data[$i]["tokuisaki_tel"], 3, 3) . "-" . substr($data[$i]["tokuisaki_tel"], 6), 0, 'L', false, 0);
+            $pdf->Cell(50, 5, $data[$i]["tokuisaki_nm"], 0, 1, 'L');
+
+            $pdf->SetFont('msmincho', '', 9);
+            $pdf->MultiCell(120, 6, $data[$i]["address"], 0, 'L', false, 0, 15);
+            $pdf->MultiCell(50, 6, "問合番号：" . substr($data[$i]["inquire_no"], 0, 4) . "-" . substr($data[$i]["inquire_no"], 4, 4) . "-" . substr($data[$i]["inquire_no"], 8), 0, 'L', false, 1, 150);
+
+            //barcode
+            $pdf->write1DBarcode($data[$i]["inquire_no"], 'CODABAR', 145, null, 50, 10, 0.4);
+
+            $pdf->MultiCell(40, 5, "代引金額：" . number_format($data[$i]["grand_total"]) . "円", 0, 'L', false, 0, 15);
+
+            $pdf->MultiCell(40, 5, "個数：" . $data[$i]["kosu"], 0, 'L', false, 1, 100);
+
+            $pdf->MultiCell(40, 5, "受注番号：" . $data[$i]["order_no"], 0, 'L', false, 1, 15);
+
+            $product = "";
+            foreach ($mesai as &$obj) {
+                if ($obj["order_no"] == $order_no) {
+                    //数慮
+                    $qty = $obj["qty"];
+                    if (strpos($qty, ".")) {
+                        $qty = number_format($obj["qty"], 1);
+                    }
+
+                    //単位
+                    $sale_tani = $obj["tani"];
+                    if ($sale_tani == "なし") {
+                        $sale_tani = "";
+                    };
+
+                    $product .= $obj["product_nm"] . "　" . $qty . $sale_tani . "       ";
+                };
+            }
+
+            $pdf->MultiCell(null, 6, $product, 'B', 'L', false, 1, null, null, true, 0, false, true, 6, 'M', true);
+            //$pdf->Cell(null, 1, '', 'T', 1);
+        }
+
+        $pdf->Output($fname, "F");
+    } catch (Exception $e) {
+        throw $e;
+    }
+}
 
 function getMotoBaraiInquireNo()
 {

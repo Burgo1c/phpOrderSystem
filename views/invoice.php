@@ -33,8 +33,8 @@ if ($_SESSION["auth_cd"] != "Z") {
     <meta content="株式会社ロジ・グレス" name="author">
     <title>請求書発行</title>
     <!--[if lt IE 9]><script src="js/common/html5.js"></script><![endif]-->
-    <script src="/js/common/import.js"></script>
-    <script src="/js/I1_invoice.js"></script>
+    <script src="/js/common/import.js?p=<?php echo date("YmdHis") ?>"></script>
+    <script src="/js/I1_invoice.js?p=<?php echo date("YmdHis") ?>"></script>
 </head>
 
 <body>
@@ -84,7 +84,7 @@ if ($_SESSION["auth_cd"] != "Z") {
                         </dd>
                     </dl>
                     <dl>
-                        <dt>電話番号</dt>
+                        <dt>代表番号</dt>
                         <dd style="justify-content: space-between;">
                             <input type="text" name="tokuisaki_tel" class="tokuisaki_tel" maxlength="12">
                             <!-- <input type="hidden" name="tokuisaki_cd" class="tokuisaki_cd"> -->
@@ -143,7 +143,7 @@ if ($_SESSION["auth_cd"] != "Z") {
                         </dd>
                     </dl>
                     <dl>
-                        <dt>電話番号</dt>
+                        <dt>代表番号</dt>
                         <dd style="justify-content: space-between;">
                             <input type="text" name="tokuisaki_tel" class="tokuisaki_tel ip_w80" maxlength="12">
                             <button type="button" class="subBtn">検索</button>

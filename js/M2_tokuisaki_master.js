@@ -326,46 +326,46 @@ const fncDispEdit = () => {
           }
         },
       },
-      // {
-      //   text: "削除",
-      //   class: "btn-delete",
-      //   click: async function () {
-      //     try {
-      //       dispLoading("処理中．．．");
+      {
+        text: "削除",
+        class: "btn-delete",
+        click: async function () {
+          try {
+            dispLoading("処理中．．．");
 
-      //       if ($("#editFrm #tokuisaki_cd").val() == "") {
-      //         alert("得意先を見つかりません。");
-      //         return;
-      //       };
+            if ($("#editFrm #tokuisaki_cd").val() == "") {
+              alert("得意先を指定してください。");
+              return;
+            };
 
-      //       if (!confirm("得意先を削除してよろしでしょうか？")) return;
+            if (!confirm("本当に削除してよろしでしょうか？")) return;
 
-      //       const res = await fetch(`${API_PATH}tokuisakiDelete&tokuisaki_cd=${$("#editFrm #tokuisaki_cd").val()}`);
+            const res = await fetch(`${API_PATH}tokuisakiDelete&tokuisaki_cd=${$("#editFrm #tokuisaki_cd").val()}`);
 
-      //       if (!res.ok) {
-      //         alert("ネットワークエラーが発生しました。");
-      //         return;
-      //       }
+            if (!res.ok) {
+              alert("ネットワークエラーが発生しました。");
+              return;
+            }
 
-      //       const data = await res.json();
+            const data = await res.json();
 
-      //       if (data.hasOwnProperty("error")) {
-      //         $("#dialog .err_msg").text(data.error).slideDown();
-      //         console.log(data.error);
-      //         return;
-      //       };
+            if (data.hasOwnProperty("error")) {
+              $("#dialog .err_msg").text(data.error).slideDown();
+              console.log(data.error);
+              return;
+            };
 
-      //       $(this).dialog("destroy");
-      //       $("#frmSearch_pc .btnSearch").click();
+            $(this).dialog("destroy");
+            $("#frmSearch_pc .btnSearch").click();
 
-      //     } catch (err) {
-      //       console.log(err);
-      //       alert(err);
-      //     } finally {
-      //       removeLoading();
-      //     }
-      //   },
-      // },
+          } catch (err) {
+            console.log(err);
+            alert(err);
+          } finally {
+            removeLoading();
+          }
+        },
+      },
       {
         text: "閉じる",
         class: "btn-close",
@@ -696,9 +696,60 @@ const fncDispOkurisakiList = async () => {
             removeLoading();
           }
         }
+      },
+      {
+        text: "送り先削除",
+        class: "btn-delete",
+        click: async () => {
+          try {
+            dispLoading("処理中．．．");
+
+            $("#okurisakiDialog .err_msg").text("").slideUp();
+
+            const frm = new FormData($("#okurisakiFrm")[0]);
+            frm.append("okurisaki_tokuisaki_cd", $("#tokuisaki_cd").val());
+
+            if (frm.get("okurisaki_cd") == "") {
+              alert("送り先を指定してください。");
+              return;
+            };
+
+            if (frm.get("okurisaki_cd") == "0000000001") {
+              alert("この送り先を削除出来ません。");
+              return;
+            };
+
+            if (!confirm("送り先を削除してよろしいでしょうか？")) return;
+
+            const res = await fetch(`${API_PATH}okurisakiDelete`, { body: frm, method: "POST" });
+
+            if (!res.ok) {
+              alert("ネットワークエラーが発生しました。");
+              return;
+            }
+
+            const data = await res.json();
+
+            if (data.hasOwnProperty("error")) {
+              $("#okurisakiDialog .err_msg").text(data.error).slideDown();
+              return;
+            };
+
+            alert("送り先登録を削除しました。");
+
+            fncGetOkurisaki($("#tokuisaki_cd").val(), 1);
+
+          } catch (error) {
+            console.log(error);
+            alert("サーバーでエラーが発生しました。");
+          } finally {
+            removeLoading();
+          }
+        }
       }
     ]
   })
+  $(".btn-delete").show();
 }
 
 const fncGetOkurisaki = async (id, pg) => {
@@ -931,32 +982,26 @@ const getTelList = async () => {
 const createTelArray = () => {
 
   const telValue = $("#tokuisaki_tel").val().trim();
-  // const telLast4 = telValue.substr(-4);
-  // const faxValue = $("#tokuisaki_fax").val().trim();
-  // const fuzaiValue = $("#fuzai_contact").val().trim();
+  const faxValue = $("#tokuisaki_fax").val().trim();
+  const fuzaiValue = $("#fuzai_contact").val().trim();
 
   var tel_array = [];
   tel_array.push({
     tel: telValue,
   });
-  // if (telLast4 !== telValue) {
-  //   tel_array.push({
-  //     tel: telLast4,
-  //   });
-  // }
-  // if (faxValue !== "" &&
-  //   faxValue !== telValue) {
-  //   tel_array.push({
-  //     tel: faxValue,
-  //   });
-  // }
-  // if (fuzaiValue !== "" &&
-  //   fuzaiValue !== telValue &&
-  //   fuzaiValue !== faxValue) {
-  //   tel_array.push({
-  //     tel: fuzaiValue,
-  //   });
-  // }
+  if (faxValue !== "" &&
+    faxValue !== telValue) {
+    tel_array.push({
+      tel: faxValue,
+    });
+  }
+  if (fuzaiValue !== "" &&
+    fuzaiValue !== telValue &&
+    fuzaiValue !== faxValue) {
+    tel_array.push({
+      tel: fuzaiValue,
+    });
+  }
 
   $("#tokuisakiTelFrm table tbody tr input").each(function () {
     const currentValue = $(this).val().trim();
@@ -964,10 +1009,7 @@ const createTelArray = () => {
 
     if (currentValue !== "") {
 
-      if (currentValue === telValue) {
-        exists = true;
-      }
-      // if (currentValue === telLast4) {
+      // if (currentValue === telValue) {
       //   exists = true;
       // }
       // if (currentValue === faxValue) {
@@ -976,6 +1018,8 @@ const createTelArray = () => {
       // if (currentValue === fuzaiValue) {
       //   exists = true;
       // };
+      // Check if currentValue already exists in tel_array
+      exists = tel_array.some(row => row.tel === currentValue);
 
       if (!exists) {
         const row_object = {

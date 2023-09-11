@@ -54,9 +54,10 @@ drop table IF EXISTS m_tokuisaki_tel;
 create table ueda.m_tokuisaki_tel (
   tokuisaki_cd character varying(10) not null
   , tel_no character varying(12) not null
+  , daihyo character varying(1)
   , entry_date timestamp(6) without time zone default CURRENT_TIMESTAMP not null
   , update_date timestamp(6) without time zone default CURRENT_TIMESTAMP not null
-  , primary key (tel_no)
+  , primary key (tokuisaki_cd, tel_no)
 );
 
 drop table IF EXISTS m_okurisaki; 

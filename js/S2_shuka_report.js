@@ -66,23 +66,25 @@ const statementOfDelivery = async (form) => {
             return false;
         };
 
-        const type = res.headers.get("content-type");
+        // const type = res.headers.get("content-type");
 
         // If Error
-        if (type.indexOf("text/html") !== -1) {
-            const data = await res.json();
+        //if (type.indexOf("text/html") !== -1) {
+        const data = await res.json();
+        if (data != "OK") {
             $(".err_msg").text(data.error).slideDown();
             console.log(data.error);
             return false;
-        };
+        }
+        // };
 
-        const data = await res.blob();
+        // const data = await res.blob();
 
-        //DOWNLOAD
-        var link = document.createElement("a");
-        link.href = window.URL.createObjectURL(data);
-        link.download = `荷物受渡書_${fileDateTime()}.pdf`;
-        link.click();
+        // //DOWNLOAD
+        // var link = document.createElement("a");
+        // link.href = window.URL.createObjectURL(data);
+        // link.download = `荷物受渡書_${fileDateTime()}.pdf`;
+        // link.click();
 
         return true;
     } catch (error) {

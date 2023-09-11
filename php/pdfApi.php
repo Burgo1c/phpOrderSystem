@@ -66,10 +66,13 @@ try {
         case "receiptPdf":
             if (!isset($_REQUEST["order_no"]) || $_REQUEST["order_no"] == "") throw new Exception("受注番号を入力してください。");
             // GET DATA
-            $sql = "SELECT grand_total 
-                            , sale_dt
-                            , receive_dt
-                            FROM t_sale_h 
+            $sql = "SELECT h.grand_total 
+                            , h.sale_dt
+                            , h.receive_dt
+                            , h.order_no
+                            , o.okurisaki_nm as okurisaki_nm
+                            FROM t_sale_h h
+                            LEFT JOIN m_okurisaki o ON h.tokuisaki_cd = o.tokuisaki_cd AND h.okurisaki_cd = o.okurisaki_cd
                             WHERE order_no = :order_no;";
             $params = array();
             $params["order_no"] = $_REQUEST["order_no"];
@@ -85,8 +88,8 @@ try {
             reciept($fname, $cost);
 
             //Convert file to bytes
-            $filedata = file_get_contents($fname);
-            $filebytes = base64_encode($filedata);
+            $filedata   = file_get_contents($fname);
+            $filebytes  = base64_encode($filedata);
 
             // Delete file
             unlink($fname);
@@ -128,7 +131,7 @@ try {
                         , t.tokuisaki_adr_3 AS okurisaki_adr_3
                         , t.tokuisaki_nm AS okurisaki_nm
                         , d.product_cd AS product_cd
-                        , s.product_nm AS product_nm
+                        , COALESCE(s.product_nm, d.product_nm) AS product_nm
                         , d.qty AS qty
                         , c.kanri_nm AS tani
                         , h.grand_total AS grand_total
@@ -153,8 +156,8 @@ try {
             shukaIrai($fname, $list);
 
             //Convert file to bytes
-            $filedata = file_get_contents($fname);
-            $filebytes = base64_encode($filedata);
+            $filedata   = file_get_contents($fname);
+            $filebytes  = base64_encode($filedata);
             // Delete file
             unlink($fname);
 
@@ -198,9 +201,9 @@ try {
                         , t.tokuisaki_tel AS tokuisaki_tel
                         , d.product_cd AS product_cd
                         , s.product_nm AS product_nm
-                        , s.product_nm_abrv AS product_nm_abrv
-                        , s.sale_price AS sale_price
-                        , s.tax_kbn AS tax_kbn
+                        , d.product_nm AS product_nm_abrv
+                        , d.tanka AS sale_price
+                        , COALESCE(s.tax_kbn, '1') AS tax_kbn
                         , d.qty AS qty
                         , d.total_cost AS row_total
                         , c.kanri_nm AS tani
@@ -211,6 +214,7 @@ try {
                         , t.sale_kbn AS sale_kbn
                         , t.order_print_kbn AS tokuisaki_disp_kbn
                         , s.order_disp_kbn AS product_disp_kbn
+                        , s.haiban_kbn AS haiban_kbn
                         , r.receipt_flg AS receipt_flg
                         , c1.kanri_nm AS order_kbn
                         FROM t_sale_h h
@@ -242,8 +246,8 @@ try {
             A3Denpyo($fname, $list);
 
             //Convert file to bytes
-            $filedata = file_get_contents($fname);
-            $filebytes = base64_encode($filedata);
+            $filedata   = file_get_contents($fname);
+            $filebytes  = base64_encode($filedata);
             // Delete file
             unlink($fname);
 
@@ -307,8 +311,8 @@ try {
             A4Denpyo($fname, $list);
 
             //Convert file to bytes
-            $filedata = file_get_contents($fname);
-            $filebytes = base64_encode($filedata);
+            $filedata   = file_get_contents($fname);
+            $filebytes  = base64_encode($filedata);
             // Delete file
             unlink($fname);
 
@@ -357,7 +361,7 @@ try {
             , o.okurisaki_adr_1 AS okurisaki_adr_1
             , o.okurisaki_adr_2 AS okurisaki_adr_2
             , o.okurisaki_adr_3 AS okurisaki_adr_3
-            , s.product_nm_abrv AS product_nm_abrv
+            , d.product_nm AS product_nm_abrv
             , d.qty AS qty
             , c2.kanri_nm AS sale_tani
             , c3.kanri_cd AS haten_cd
@@ -399,7 +403,7 @@ try {
             if (count($list) == 0) throw new Exception("NG");
 
             //if ($list[0]["sale_kbn"] != "1" && $list[0]["sale_kbn"] != "4") throw new Exception("送り状を発行できる売上区分ではありません。");
-            
+
             //2) create PDF
             //YAMATO
             // if ($list[0]["delivery_kbn"] == "1") {
@@ -407,32 +411,32 @@ try {
                 throw new Exception("NG");
             }
             if ($list[0]["sale_kbn"] == "1") {
-                $report_id = YAMATO_DAIBIKI_REPORT_ID;
-                $fname = TEMP_FOLDER . "yamato_daibiki_" . date("YmdHis") . PDF;
+                $report_id  = YAMATO_DAIBIKI_REPORT_ID;
+                $fname      = TEMP_FOLDER . "yamato_daibiki_" . date("YmdHis") . PDF;
 
                 if ($list[0]["kosu"] > 1) {
                     yamatoDaibiki($fname, $list);
 
-                    $report_id_2 = YAMATO_MOTO_BARAI_REPORT_ID;
-                    $fname2 = TEMP_FOLDER . "yamato_moto_barai_" . date("YmdHis") . PDF;
+                    $report_id_2    = YAMATO_MOTO_BARAI_REPORT_ID;
+                    $fname2         = TEMP_FOLDER . "yamato_moto_barai_" . date("YmdHis") . PDF;
 
                     yamatoDaibikiMotoBarai($fname2, $list);
                 } else {
                     yamatoDaibiki($fname, $list);
                 }
             } else { // if ($list[0]["sale_kbn"] == "4")
-                $report_id = YAMATO_MOTO_BARAI_REPORT_ID;
-                $fname = TEMP_FOLDER . "yamato_moto_barai_" . date("YmdHis") . PDF;
+                $report_id  = YAMATO_MOTO_BARAI_REPORT_ID;
+                $fname      = TEMP_FOLDER . "yamato_moto_barai_" . date("YmdHis") . PDF;
                 yamatoMotoBarai($fname, $list);
             }
             // };
 
             //Convert file to bytes
-            $filedata = file_get_contents($fname);
-            $filebytes = base64_encode($filedata);
+            $filedata   = file_get_contents($fname);
+            $filebytes  = base64_encode($filedata);
 
             if (isset($fname2)) {
-                $filedata2 = file_get_contents($fname2);
+                $filedata2  = file_get_contents($fname2);
                 $filebytes2 = base64_encode($filedata2);
 
                 //$pdfArray = array($filebytes, $filebytes2);

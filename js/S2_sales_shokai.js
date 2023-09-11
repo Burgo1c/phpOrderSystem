@@ -87,7 +87,7 @@ const fncSearch = async (el, pg) => {
                     <img src="/images/icon_edit.svg" class="btnEdit_icon" alt="詳細" id="${obj.order_no}" loading="lazy"/>
                 </td>
                 <td class="w_150px">${obj.sale_dt}</td>
-                <td class="tal">${obj.tokuisaki_nm}</td>
+                <td class="tal">${(obj.tokuisaki_nm == "") ? "存在しない" : obj.tokuisaki_nm}</td>
                 <td >${obj.order_no}</td>
                 <td class="tal">${obj.inquire_no}</td>
                 <td class="tal">${obj.user_nm}</td>
@@ -100,7 +100,7 @@ const fncSearch = async (el, pg) => {
             <dl class="itemList_sp">
                 <a class="link" id="${obj.order_no}"></a>
                 <dt>${obj.order_no}</dt>
-                ${obj.sale_dt} | ${obj.tokuisaki_nm} | ${obj.user_nm}
+                ${obj.sale_dt} | ${(obj.tokuisaki_nm == "") ? "存在しない" : obj.tokuisaki_nm} | ${obj.user_nm}
             </dl>
             `);
             sp.append(dl);
