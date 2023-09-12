@@ -27,8 +27,8 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
     <meta content="株式会社ロジ・グレス" name="author">
     <title>売上照会</title>
     <!--[if lt IE 9]><script src="/js/common/html5.js"></script><![endif]-->
-    <script src="/js/common/import.js?p=(new Date()).getTime()"></script>
-    <script src="/js/S2_sales_shokai.js?p=(new Date()).getTime()"></script>
+    <script src="/js/common/import.js?p=<?php echo date("YmdHis") ?>"></script>
+    <script src="/js/S2_sales_shokai.js?p=<?php echo date("YmdHis") ?>"></script>
 </head>
 
 <body>
@@ -44,6 +44,20 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
         <section class="searchBlock">
             <h3>操作パネル</h3>
             <form class="itemSearch" id="frmSearch_pc">
+                <dl>
+                    <dt>ログインID</dt>
+                    <dd>
+                        <select name="user_id" id="user_id" class="ip_w50">
+                            <option value="all">全て</option>
+                            <?php
+                            foreach ($_SESSION["user_list"] as &$obj) {
+                                echo '<option value="' . $obj["user_id"] . '">' . $obj["user_nm"] . '</option>';
+                            }
+
+                            ?>
+                        </select>
+                    </dd>
+                </dl>
                 <dl>
                     <dt>受注日</dt>
                     <dd><input name="sale_dt" type="date" value="" class="ip_w50"></dd>
@@ -125,6 +139,20 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
                 </div>
                 <ul class="itemSearch_sp_open">
                     <form class="itemSearch" id="frmSearch_sp">
+                        <dl>
+                            <dt>ログインID</dt>
+                            <dd>
+                                <select name="user_id" id="user_id" class="ip_w100">
+                                    <option value="all">全て</option>
+                                    <?php
+                                    foreach ($_SESSION["user_list"] as &$obj) {
+                                        echo '<option value="' . $obj["user_id"] . '">' . $obj["user_nm"] . '</option>';
+                                    }
+
+                                    ?>
+                                </select>
+                            </dd>
+                        </dl>
                         <dl>
                             <dt>受注日</dt>
                             <dd><input name="order_dt" type="date" value="" class="ip_w50"></dd>
@@ -335,7 +363,7 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
                 <dt>伝票種類</dt>
                 <dd>
                     <div>
-                        <input type="checkbox" name="" id="sale_slip" >
+                        <input type="checkbox" name="" id="sale_slip">
                         <label for="sale_slip">売上伝票</label>
                     </div>
                     <div>
@@ -347,11 +375,11 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
                         <label for="reciept">領収書</label>
                     </div>
                     <div>
-                        <input type="checkbox" name="" id="label" >
+                        <input type="checkbox" name="" id="label">
                         <label for="label">荷札</label>
                     </div>
                     <div>
-                        <input type="checkbox" name="" id="order_frm" >
+                        <input type="checkbox" name="" id="order_frm">
                         <label for="order_frm">注文書</label>
                     </div>
                 </dd>

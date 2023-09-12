@@ -32,7 +32,7 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
     <meta content="" name="keywords" />
     <meta content="株式会社ロジ・グレス" name="author">
     <title>得意先マスタ</title>
-    <!--[if lt IE 9]><script src="js/common/html5.js"></script><![endif]-->
+    <!--[if lt IE 9]><script src="/js/common/html5.js"></script><![endif]-->
     <script src="/js/common/import.js?p=<?php echo date("YmdHis") ?>"></script>
     <script src="/js/M2_tokuisaki_master.js?p=<?php echo date("YmdHis") ?>"></script>
 </head>
@@ -52,10 +52,6 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
             <h3>操作パネル</h3>
             <form class="itemSearch" id="frmSearch_pc">
                 <dl>
-                    <dt>電話番号</dt>
-                    <dd><input name="tokuisaki_tel" type="tel" maxlength="12" value="" class="ip_w50" placeholder=""></dd>
-                </dl>
-                <dl>
                     <dt>得意先名</dt>
                     <dd><input name="tokuisaki_nm" type="text" maxlength="20" value="" class="ip_w100" placeholder=""></dd>
                 </dl>
@@ -67,7 +63,14 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
                     <dt>郵便番号</dt>
                     <dd><input name="tokuisaki_zip" type="tel" maxlength="10" value="" class="ip_w50" placeholder=""></dd>
                 </dl>
-
+                <dl>
+                    <dt>住所</dt>
+                    <dd><input name="tokuisaki_adr" type="text" value="" class="ip_w100" placeholder=""></dd>
+                </dl>
+                <dl>
+                    <dt>電話番号</dt>
+                    <dd><input name="tokuisaki_tel" type="tel" maxlength="12" value="" class="ip_w50" placeholder=""></dd>
+                </dl>
                 <div class="btnBlock">
                     <button type="button" class="btnSearch" form="frmSearch_pc">検索する</button>
                     <button type="reset" class="btnReset">クリア</button>
@@ -99,11 +102,7 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
                 <div class="itemSearch_sp_title"><img src="/images/icon_search_g.svg" alt="入荷" /><span>操作パネル</span>
                 </div>
                 <ul class="itemSearch_sp_open">
-                    <form class="itemSearch">
-                        <dl>
-                            <dt>電話番号</dt>
-                            <dd><input name="tokuisaki_tel" type="tel" maxlength="11" value="" class="ip_w100" placeholder=""></dd>
-                        </dl>
+                    <form class="itemSearch" id="frmSearch_sp">
                         <dl>
                             <dt>得意先名</dt>
                             <dd><input name="tokuisaki_nm" type="text" maxlength="20" value="" class="ip_w100" placeholder=""></dd>
@@ -116,8 +115,16 @@ if ((!isset($_SESSION['created'])) || (time() - $_SESSION['created'] > 3600)) {
                             <dt>郵便番号</dt>
                             <dd><input name="tokuisaki_zip" type="tel" maxlength="10" value="" class="ip_w100" placeholder=""></dd>
                         </dl>
+                        <dl>
+                            <dt>住所</dt>
+                            <dd><input name="tokuisaki_adr" type="text" value="" class="ip_w100" placeholder=""></dd>
+                        </dl>
+                        <dl>
+                            <dt>電話番号</dt>
+                            <dd><input name="tokuisaki_tel" type="tel" maxlength="11" value="" class="ip_w100" placeholder=""></dd>
+                        </dl>
                         <div class="btnBlock">
-                            <button type="button" class="btnSearch">検索する</button>
+                            <button type="button" class="btnSearch" form="frmSearch_sp">検索する</button>
                             <button type="reset" class="btnReset">クリア</button>
                         </div>
                         <div class="btnBlock_more">

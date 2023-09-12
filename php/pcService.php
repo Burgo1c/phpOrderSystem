@@ -6,7 +6,7 @@ date_default_timezone_set('Asia/Tokyo');
 require_once("config.php");
 require_once("pdf.php");
 require_once("logger.php");
-//require_once('phpmail.php');
+require_once('phpmail.php');
 
 /**
  * FILE ERROR CHECK
@@ -467,9 +467,13 @@ try {
                 $whr .= " AND tokuisaki_zip = :zip";
             };
 
+            if (isset($_REQUEST["tokuisaki_adr"]) && $_REQUEST["tokuisaki_adr"] != "") {
+                $params["tokuisaki_adr"] = "%" . $_REQUEST["tokuisaki_adr"] . "%";
+                $whr .= " AND CONCAT(tokuisaki_adr_1, tokuisaki_adr_2, tokuisaki_adr_3) LIKE :tokuisaki_adr";
+            }
+
             if (isset($_REQUEST["tokuisaki_tel"]) && $_REQUEST["tokuisaki_tel"] != "") {
                 $params["tel"] = "%" . $_REQUEST["tokuisaki_tel"] . "%";
-                // $whr .= " AND tel.tel_no = :tel";
                 $whr .= " AND t.tokuisaki_cd IN (SELECT tel.tokuisaki_cd FROM m_tokuisaki_tel tel WHERE tel.tel_no LIKE :tel)";
             };
 
@@ -2375,7 +2379,7 @@ try {
                     , ts.unit_price
                     FROM m_tokuisaki_shohin ts
                     INNER JOIN m_tokuisaki t ON ts.tokuisaki_cd = t.tokuisaki_cd
-                    LEFT JOIN m_shohin s ON ts.product_cd = s.product_cd
+                    INNER JOIN m_shohin s ON ts.product_cd = s.product_cd
                     LEFT JOIN m_code c1 ON s.product_type = c1.kanri_cd AND c1.kanri_key = 'product.type'
                     LEFT JOIN m_code c2 ON s.sale_tani = c2.kanri_cd AND c2.kanri_key = 'sale.tani'
                     LEFT JOIN m_code c3 ON t.jikai_kbn_1 <> '0' AND t.jikai_kbn_1 = c3.kanri_cd AND c3.kanri_key = 'jikai.kbn' 
@@ -2420,7 +2424,7 @@ try {
             $sql = "SELECT COUNT(*) 
             FROM m_tokuisaki_shohin ts
             INNER JOIN m_tokuisaki t ON ts.tokuisaki_cd = t.tokuisaki_cd
-            LEFT JOIN m_shohin s ON ts.product_cd = s.product_cd " . $whr;
+            INNER JOIN m_shohin s ON ts.product_cd = s.product_cd " . $whr;
 
             $sth = $dbh->prepare($sql);
             $sth->execute($params);
@@ -2607,8 +2611,8 @@ try {
                     , ts.sale_price
                     , ts.unit_price
                     FROM m_tokuisaki_shohin ts
-                    LEFT JOIN m_tokuisaki t ON ts.tokuisaki_cd = t.tokuisaki_cd
-                    LEFT JOIN m_shohin s ON ts.product_cd = s.product_cd
+                    INNER JOIN m_tokuisaki t ON ts.tokuisaki_cd = t.tokuisaki_cd
+                    INNER JOIN m_shohin s ON ts.product_cd = s.product_cd
                     LEFT JOIN m_code c1 ON s.product_type = c1.kanri_cd AND c1.kanri_key = 'product.type'
                     LEFT JOIN m_code c2 ON s.sale_tani = c2.kanri_cd AND c2.kanri_key = 'sale.tani'
                     LEFT JOIN m_code c3 ON t.industry_cd = c3.kanri_cd AND c3.kanri_key = 'industry.kbn'
@@ -5067,20 +5071,18 @@ try {
             $data = $sth->fetchAll(PDO::FETCH_ASSOC);
 
             //2) create PDF
-            // $fname = TEMP_FOLDER . "statementOfDelivery_" . uniqid(mt_rand(), true) . PDF;
+            $fname = TEMP_FOLDER . "statementOfDelivery_" . uniqid(mt_rand(), true) . PDF;
 
-            // statementOfDelivery($fname, $data, date("Y年m月d日", strtotime($_REQUEST["shuka_dt"])));
+            statementOfDelivery($fname, $data, date("Y年m月d日", strtotime($_REQUEST["shuka_dt"])));
 
-            // //3) send pdf blob
-            // header('Content-Type: application/pdf');
-            // header('Content-Disposition: attachment; filename="statementOfDelivery.pdf"');
-            // header('Content-Length: ' . filesize($fname));
-            // readfile($fname);
-            // unlink($fname);
+            //3) send pdf blob
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename="statementOfDelivery.pdf"');
+            header('Content-Length: ' . filesize($fname));
+            readfile($fname);
+            unlink($fname);
 
             $dbh->commit();
-
-            echo json_encode("OK", JSON_UNESCAPED_UNICODE);
             break;
 
             /** 出荷日報 **/
@@ -5089,29 +5091,29 @@ try {
             $_SESSION['created'] = time();
 
             //GET 荷物受渡書 DATA
-            $sql = "SELECT
-                        COUNT(inquire_no) as shuka_cnt,
-                        SUM(CAST(kosu AS INTEGER)) AS kosu_total,
-                        (SELECT kanri_cd FROM m_code WHERE kanri_key = 'ninushi.code') AS ninushi_cd
-                        FROM t_sale_h
-                        WHERE shuka_print_dt = :shuka_dt
-                        AND sender_cd = :customer_cd";
+            // $sql = "SELECT
+            //             COUNT(inquire_no) as shuka_cnt,
+            //             SUM(CAST(kosu AS INTEGER)) AS kosu_total,
+            //             (SELECT kanri_cd FROM m_code WHERE kanri_key = 'ninushi.code') AS ninushi_cd
+            //             FROM t_sale_h
+            //             WHERE shuka_print_dt = :shuka_dt
+            //             AND sender_cd = :customer_cd";
 
-            $whr = "";
-            $params = array();
-            $params["customer_cd"]  = $_REQUEST["customer_cd"];
-            $params["shuka_dt"]     = $_REQUEST["shuka_dt"];
+            // $whr = "";
+            // $params = array();
+            // $params["customer_cd"]  = $_REQUEST["customer_cd"];
+            // $params["shuka_dt"]     = $_REQUEST["shuka_dt"];
 
-            if ($_REQUEST["shuka_print_qty"] > 0) {
-                $whr = " AND shuka_print_qty = :shuka_print_qty";
-                $params["shuka_print_qty"]  = $_REQUEST["shuka_print_qty"];
-            };
+            // if ($_REQUEST["shuka_print_qty"] > 0) {
+            //     $whr = " AND shuka_print_qty = :shuka_print_qty";
+            //     $params["shuka_print_qty"]  = $_REQUEST["shuka_print_qty"];
+            // };
 
-            $sql .= $whr;
+            // $sql .= $whr;
 
-            $sth = $dbh->prepare($sql);
-            $sth->execute($params);
-            $top_pg = $sth->fetchAll(PDO::FETCH_ASSOC);
+            // $sth = $dbh->prepare($sql);
+            // $sth->execute($params);
+            // $top_pg = $sth->fetchAll(PDO::FETCH_ASSOC);
 
             //GET 出荷日報 DATA
             $sql = "SELECT
@@ -5168,8 +5170,8 @@ try {
 
             //2) create PDF
             $fname = TEMP_FOLDER . "shukaReportData_" . uniqid(mt_rand(), true) . PDF;
-           // shukaReportData($fname, $order_data, $product_data, date("Y年m月d日", strtotime($_REQUEST["shuka_dt"])));
-            shukaReportDataTest($fname, $order_data, $product_data, date("Y年m月d日", strtotime($_REQUEST["shuka_dt"])), $top_pg, $params["customer_cd"]);
+            shukaReportData($fname, $order_data, $product_data, date("Y年m月d日", strtotime($_REQUEST["shuka_dt"])));
+            //shukaReportDataTest($fname, $order_data, $product_data, date("Y年m月d日", strtotime($_REQUEST["shuka_dt"])), $top_pg, $params["customer_cd"]);
 
             //3) send pdf blob
             header('Content-Type: application/pdf');
