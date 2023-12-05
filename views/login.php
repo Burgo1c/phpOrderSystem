@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=0">
     <meta content="" name="description" />
     <meta content="" name="keywords" />
-    <meta content="株式会社ロジ・グレス" name="author">
+    <meta content="株式会社〇〇〇〇" name="author">
     <title>受注管理システム</title>
     <!--[if lt IE 9]><script src="js/html5.js"></script><![endif]-->
     <script src="/js/common/import.js?p=(new Date()).getTime()"></script>
@@ -20,7 +20,7 @@
 
         <form class="login" id="loginFrm" autocomplete="off">
 
-            <img src="/images/top-logo.png" class="logo" alt="株式会社ウエダ食品" />
+            <img src="/images/test.png" class="logo" alt="株式会社〇〇〇〇" />
             <h3 class="sys-name">受注管理システム</h3>
             <p class="err_msg"></p>
             <dl>
