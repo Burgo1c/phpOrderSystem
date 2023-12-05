@@ -30,7 +30,7 @@ if ($_SESSION["auth_cd"] != "Z") {
     <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=0">
     <meta content="" name="description" />
     <meta content="" name="keywords" />
-    <meta content="株式会社ロジ・グレス" name="author">
+    <meta content="株式会社〇〇〇〇" name="author">
     <title>日報・月報</title>
     <!--[if lt IE 9]><script src="/js/common/html5.js"></script><![endif]-->
     <script src="/js/common/import.js?p=(new Date()).getTime()"></script>
