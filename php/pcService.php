@@ -5520,13 +5520,13 @@ try {
                 // 届け先部門名称2
                 $str .= mb_convert_encoding(str_repeat(" ", 50), 'CP932', 'UTF-8');
 
-                // ウエダ食品電話番号
+                // 〇〇〇〇電話番号
                 $str .= mb_convert_encoding(StrBytePad(trim(str_replace("-", "", TEL)), 12, " "), 'CP932', 'UTF-8');
 
-                // ウエダ食品名
+                // 〇〇〇〇名
                 $str .= mb_convert_encoding(StrBytePad(trim(POST_COMPANY), 30, " "), 'CP932', 'UTF-8');
 
-                // ウエダ食品住所
+                // 〇〇〇〇住所
                 $str .= mb_convert_encoding(StrBytePad(trim(POST_ADDRESS), 96, " "), 'CP932', 'UTF-8');
 
                 // 顧客コード
@@ -5897,13 +5897,13 @@ try {
                 // 届け先部門名称2
                 $str .= mb_convert_encoding(str_repeat(" ", 50), 'CP932', 'UTF-8');
 
-                // ウエダ食品電話番号
+                // 〇〇〇〇電話番号
                 $str .= mb_convert_encoding(StrBytePad(trim(str_replace("-", "", TEL)), 12, " "), 'CP932', 'UTF-8');
 
-                // ウエダ食品名
+                // 〇〇〇〇名
                 $str .= mb_convert_encoding(StrBytePad(trim(POST_COMPANY), 30, " "), 'CP932', 'UTF-8');
 
-                // ウエダ食品住所
+                // 〇〇〇〇住所
                 $str .= mb_convert_encoding(StrBytePad(trim(POST_ADDRESS), 96, " "), 'CP932', 'UTF-8');
 
                 // 顧客コード
