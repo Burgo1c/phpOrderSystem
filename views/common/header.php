@@ -1,7 +1,7 @@
 <header>
   <section class="inner">
-    <!-- <a href="top" class="logo"><img src="/images/top-logo.png" alt="株式会社ウエダ食品" /></a> -->
-    <a href="top" class="logo_sp"><img src="/images/top-logo.png" alt="株式会社ウエダ食品" /></a>
+    <!-- <a href="top" class="logo"><img src="/images/top-logo.png" alt="株式会社〇〇〇〇" /></a> -->
+    <a href="top" class="logo_sp"><img src="/images/top-logo.png" alt="株式会社〇〇〇〇" /></a>
     <h1><a href="top">受注管理システム</a></h1>
     <h2 class="pageTitle"></h2>
     <p class="user"><?php echo $_SESSION["user_nm"] ?></p>
