@@ -345,7 +345,7 @@ try {
     $params = array();
     $params["send_dt"] = $send_dt;
     $params["sale_dt"] = $shuka_dt;
-    $params["user_id"] = "ueda";
+    $params["user_id"] = "user";
 
     $sth = $dbh->prepare($sql);
     $sth->execute($params);
