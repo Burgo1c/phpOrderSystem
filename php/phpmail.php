@@ -3,9 +3,9 @@
 use PHPMailer\PHPMailer\PHPMailer;
 //use PHPMailer\PHPMailer\Exception;
 
-//require '/var/www/uskk-order.com/php/lib/PHPMailer/src/Exception.php';
-require '/var/www/uskk-order.com/php/lib/PHPMailer/src/PHPMailer.php';
-require '/var/www/uskk-order.com/php/lib/PHPMailer/src/SMTP.php';
+//require '/var/www/php/lib/PHPMailer/src/Exception.php';
+require '/var/www/php/lib/PHPMailer/src/PHPMailer.php';
+require '/var/www/php/lib/PHPMailer/src/SMTP.php';
 
 /**
  * メールを送信する
