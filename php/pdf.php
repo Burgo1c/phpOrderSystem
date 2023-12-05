@@ -1398,8 +1398,8 @@ function shohinDaicho($fname, $data)
 
         $pdf = new shohinPDF('L');
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('商品台帳');
         $pdf->SetSubject('商品台帳');
         $pdf->SetHeaderMargin(15);
@@ -1452,8 +1452,8 @@ function tokuisakiDaicho($fname, $data)
 
         $pdf = new tokuisakiPDF("L");
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('得意先別商品帳');
         $pdf->SetSubject('得意先別商品帳');
         $pdf->SetHeaderMargin(15);
@@ -1518,8 +1518,8 @@ function shohinSalesList($fname, $data, $date_from, $date_to)
 
     $pdf = new shohinSalePDF();
 
-    $pdf->SetCreator("株式会社ロジ・グレス");
-    $pdf->SetAuthor("株式会社ロジ・グレス");
+    $pdf->SetCreator("株式会社〇〇〇〇");
+    $pdf->SetAuthor("株式会社〇〇〇〇");
     $pdf->SetTitle('商品別売上一覧');
     $pdf->SetSubject('商品別売上一覧');
     $pdf->SetHeaderMargin(15);
@@ -1582,8 +1582,8 @@ function tokuisakiSale($fname, $data, $date_from, $date_to)
 
         $pdf = new tokuisakiSalePDF();
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('売上累計表');
         $pdf->SetSubject('売上累計表');
         $pdf->SetHeaderMargin(15);
@@ -1647,8 +1647,8 @@ function shukaIrai($fname, $data)
 
         $pdf = new shukaPDF('L');
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('出荷依頼書');
         $pdf->SetSubject('出荷依頼書');
         $pdf->SetHeaderMargin(15);
@@ -1717,8 +1717,8 @@ function urikake($fname, $data, $date_from, $date_to)
 
         $pdf = new urikakePDF("L");
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('売掛金元帳');
         $pdf->SetSubject('売掛金元帳');
         $pdf->SetHeaderMargin(15);
@@ -1803,8 +1803,8 @@ function invoice($fname, $data, $bank_info, $dt_from, $dt_to)
         $grand_total = null;
         $pdf = new invoicePDF("L");
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('請求書');
         $pdf->SetSubject('請求書');
         $pdf->SetHeaderMargin(15);
@@ -1895,8 +1895,8 @@ function A3Denpyo($fname, $data)
 
         $pdf = new TCPDF("L", "mm", "A3");
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('売上伝票');
         $pdf->SetSubject('売上伝票');
         $pdf->SetHeaderMargin(0);
@@ -2559,8 +2559,8 @@ function order()
 {
     $pdf = new orderPDF();
 
-    $pdf->SetCreator("株式会社ロジ・グレス");
-    $pdf->SetAuthor("株式会社ロジ・グレス");
+    $pdf->SetCreator("株式会社〇〇〇〇");
+    $pdf->SetAuthor("株式会社〇〇〇〇");
     $pdf->SetTitle('注文書');
     $pdf->SetSubject('注文書');
     $pdf->SetHeaderMargin(15);
@@ -2742,8 +2742,8 @@ function A4Denpyo($fname, $data)
 
     $pdf = new nouhinPDF();
 
-    $pdf->SetCreator("株式会社ロジ・グレス");
-    $pdf->SetAuthor("株式会社ロジ・グレス");
+    $pdf->SetCreator("株式会社〇〇〇〇");
+    $pdf->SetAuthor("株式会社〇〇〇〇");
     $pdf->SetTitle('売上伝票');
     $pdf->SetSubject('売上伝票');
     $pdf->SetHeaderMargin(15);
@@ -2789,8 +2789,8 @@ function sales_hikae()
 {
     $pdf = new denpyoPDF("P", "mm", "A5");
 
-    $pdf->SetCreator("株式会社ロジ・グレス");
-    $pdf->SetAuthor("株式会社ロジ・グレス");
+    $pdf->SetCreator("株式会社〇〇〇〇");
+    $pdf->SetAuthor("株式会社〇〇〇〇");
     $pdf->SetTitle('売上伝票（控え）');
     $pdf->SetSubject('売上伝票（控え）');
     $pdf->SetHeaderMargin(15);
@@ -2873,8 +2873,8 @@ function reciept($fname, $data)
     try {
         $pdf = new TCPDF('P', 'mm', 'A5');
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('領収書');
         $pdf->SetSubject('領収書');
         $pdf->SetHeaderMargin(15);
@@ -2951,8 +2951,8 @@ function yamatoDaibiki($fname, $data)
 
         $pdf = new TCPDF('P', 'mm', $pageLayout);
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('ヤマト送り状');
         $pdf->SetSubject('ヤマト送り状');
         $pdf->SetHeaderMargin(0);
@@ -3000,7 +3000,7 @@ function yamatoDaibiki($fname, $data)
         $pdf->SetFont('kozgopromedium', '', 7);
         $pdf->MultiCell(12, null, number_format(($data[0]["tax_8"] + $data[0]["tax_10"])), 0, 'R', false, 0, 86, 23);
 
-        //ウエダ食品の情報
+        //〇〇〇〇の情報
         $pdf->SetFont('kozgopromedium', '', 9);
         $pdf->MultiCell(50, 5, "TEL. " . TEL, 0, 'L', false, 0, 10, 25);
         $pdf->MultiCell(50, 5, "〒" . ZIP, 0, 'L', false, 0, 10, 28);
@@ -3072,7 +3072,7 @@ function yamatoDaibiki($fname, $data)
         //代金
         $pdf->MultiCell(30, null, number_format($data[0]["grand_total"]), 0, 'R', false, 0, 69, 105);
 
-        //ウエダ食品の情報
+        //〇〇〇〇の情報
         $pdf->SetFont('kozgopromedium', '', 9);
         $pdf->MultiCell(50, 5, "TEL. " . TEL, 0, 'L', false, 0, 10, 101);
         $pdf->MultiCell(80, 5, "〒" . ZIP . " " . POST_ADDRESS, 0, 'L', false, 0, 10, 105);
@@ -3175,7 +3175,7 @@ function yamatoDaibiki($fname, $data)
         //時間帯
         $pdf->MultiCell(20, null, $data[0]["yamato_kbn"], 0, 'C', false, 0, 80, 187);
 
-        //ウエダ食品の情報
+        //〇〇〇〇の情報
         $pdf->SetFont('kozgopromedium', '', 9);
         $pdf->MultiCell(50, 5, "TEL. " . TEL, 0, 'L', false, 0, 10, 188);
         $pdf->MultiCell(80, 5, "〒" . ZIP, 0, 'L', false, 0, 10, 192);
@@ -3237,8 +3237,8 @@ function yamatoMotoBarai($fname, $data)
 
         $pdf = new TCPDF('P', 'mm', $pageLayout);
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('ヤマト送り状');
         $pdf->SetSubject('ヤマト送り状');
         $pdf->SetHeaderMargin(0);
@@ -3484,8 +3484,8 @@ function yamatoDaibikiMotoBarai($fname, $data)
 
         $pdf = new TCPDF('P', 'mm', $pageLayout);
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('ヤマト送り状');
         $pdf->SetSubject('ヤマト送り状');
         $pdf->SetHeaderMargin(0);
@@ -3719,8 +3719,8 @@ function yamato_ship_invoice($fname, $data)
 
         $pdf = new TCPDF('L', 'mm', $pageLayout);
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('ヤマト送り状');
         $pdf->SetSubject('ヤマト送り状');
         $pdf->SetHeaderMargin(0);
@@ -3772,8 +3772,8 @@ function sagawa_ship_invoice($fname, $data)
 
         $pdf = new TCPDF('L', 'mm', $pageLayout);
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('佐川急便送り状');
         $pdf->SetSubject('佐川急便送り状');
         $pdf->SetHeaderMargin(0);
@@ -3826,8 +3826,8 @@ function statementOfDelivery($fname, $data, $shuka_dt)
 
         $pdf = new TCPDF('P', 'mm');
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('荷物受渡書');
         $pdf->SetSubject('荷物受渡書');
         $pdf->SetHeaderMargin(0);
@@ -3918,8 +3918,8 @@ function shukaReportData($fname, $data, $mesai, $shuka_dt)
 
         $pdf = new shukaReportPDF('P', 'mm');
 
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('出荷日報');
         $pdf->SetSubject('出荷日報');
         $pdf->SetHeaderMargin(0);
@@ -4203,8 +4203,8 @@ function shukaReportDataTest($fname, $data, $mesai, $shuka_dt, $top_pg, $sender_
 {
     try {
         $pdf = new shukaReportPDFTest('P', 'mm');
-        $pdf->SetCreator("株式会社ロジ・グレス");
-        $pdf->SetAuthor("株式会社ロジ・グレス");
+        $pdf->SetCreator("株式会社〇〇〇〇");
+        $pdf->SetAuthor("株式会社〇〇〇〇");
         $pdf->SetTitle('出荷日報');
         $pdf->SetSubject('出荷日報');
         $pdf->SetHeaderMargin(10);
