@@ -3,16 +3,16 @@
 //このファイルはメモ帳で編集してはいけない。文字コードがおかしくなり、ダウンロードファイルが文字化けする
 
 // DB接続文字列
-define("DB_CON_STR", "pgsql:dbname=uedaorder host=localhost port=5432");
+define("DB_CON_STR", "pgsql:dbname=public host=localhost port=5432");
 
 // データベース
-define("DB_NAME", ";Database=uedaorder");
+define("DB_NAME", ";Database=public");
 
 // DBユーザー名
-define("DB_USER", "ueda");
+define("DB_USER", "user");
 
 // DBパスワード
-define("DB_PASS", "UedaUskk");
+define("DB_PASS", "password");
 
 // 一覧表示件数
 define("LIST_CNT", "500");
@@ -20,11 +20,11 @@ define("MESAI_HISTORY_LIST_CNT", "50");
 define("SALE_HISTORY_LIST_CNT", "50");
 
 //ダウンロード先
-define("TEMP_FOLDER", "/ADD_DISK/WEB/temp/");
-define("YAMATO_FOLDER", "/ADD_DISK/WEB/yamato/shuka/");
-define("YAMATO_PENDING_FOLDER", "/ADD_DISK/WEB/yamato/pending");
-define("YAMATO_PENDING_TIME_FOLDER", "/ADD_DISK/WEB/yamato/pending_start");
-define("YAMATO_LOG_PATH", "/ADD_DISK/WEB/yamato/log/");
+define("TEMP_FOLDER", "/temp/WEB/temp/");
+define("YAMATO_FOLDER", "/temp/WEB/yamato/shuka/");
+define("YAMATO_PENDING_FOLDER", "/temp/WEB/yamato/pending");
+define("YAMATO_PENDING_TIME_FOLDER", "/temp/WEB/yamato/pending_start");
+define("YAMATO_LOG_PATH", "/temp/WEB/yamato/log/");
 
 //ERROR FOLDER
 define("ZIP_UPLOAD_ERROR_FILE", "zip_upload_error.csv");
@@ -42,19 +42,19 @@ define("YAMATO_FILE", "YOTEI100");
 define("YAMATO_PENDING_TIME_FILE", "yamato_upload_start.txt");
 define("YAMATO_UPLOAD_FILE", "YMSTPOST.DAT");
 
-//株式会社ウエダ食品の情報
-define("COMPANY", "株式会社ウエダ食品");
-define("POST_COMPANY", "株式会社　ウエダ食品");
-define("ZIP", "605-0851");
-define("ADDRESS", "京都市東山区東大路松原上ル２丁目玉水７３");
-define("POST_ADDRESS", "京都市東山区玉水町73");
-define("TEL", "075-561-7259");
-define("FAX", "075-532-2273");
-define("NINUSHI_CODE", "156172560006");
-define("INQUIRE_TEL", "075-604-2255");
+//株式会社〇〇〇〇の情報
+define("COMPANY", "株式会社〇〇〇〇");
+define("POST_COMPANY", "株式会社　〇〇〇〇");
+define("ZIP", "000-0000");
+define("ADDRESS", "京都市");
+define("POST_ADDRESS", "京都市");
+define("TEL", "000-000-0000");
+define("FAX", "000-000-0000");
+define("NINUSHI_CODE", "1234567890");
+define("INQUIRE_TEL", "000-000-0000");
 
 //登録番号
-define("REGISTER_NO", "T7130001009038");
+define("REGISTER_NO", "T1234567890");
 
 /**
  * 帳票ID
@@ -79,7 +79,7 @@ define("LOG_OUT", true);
 // ログレベル 0=ERROR/1=WARN/2=INFO/3=DEBUG
 define("LOG_LEVEL", "3");
 // ログファイル出力ディレクトリ
-define("LOG_PATH", "/var/www/uskk-order.com/log/");
+define("LOG_PATH", "/var/www/log/");
 // ログファイル名
 define("LOG_FILE", "console.log");
 // ログファイル最大サイズ（Byte）
